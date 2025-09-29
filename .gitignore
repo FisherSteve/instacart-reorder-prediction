@@ -54,8 +54,30 @@ reports/*.csv
 reports/*.json
 *.parquet
 
-# Data 
-data/
+# Data - exclude contents but keep directory structure
+data/raw/*.csv
+data/intermediate/*
+data/features/*.parquet
+data/quality_reports/*
+
+# Instacart dataset files - NEVER commit original data
+orders.csv
+order_products__prior.csv
+order_products__train.csv
+products.csv
+aisles.csv
+departments.csv
+
+# Additional data protection
+*.csv
+!example_*.csv
+!sample_*.csv
+
+# Keep directory structure
+!data/raw/.gitkeep
+!data/intermediate/.gitkeep  
+!data/features/.gitkeep
+!data/quality_reports/.gitkeep
 
 # Kiro IDE files
 .kiro/

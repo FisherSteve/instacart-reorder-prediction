@@ -6,7 +6,7 @@ data:
   raw_path: "data/raw"
   intermediate_path: "data/intermediate" 
   features_path: "data/features"
-  features_file: "data/features.parquet"
+  features_file: "data/features/features.parquet"
   sql_file: "src/sql/01_build.sql"
 
 # Sampling configuration for development and testing
@@ -79,6 +79,12 @@ logging:
   level: "INFO"
   format: "%(asctime)s - %(levelname)s - %(message)s"
   date_format: "%Y-%m-%d %H:%M:%S"
+  enable_file_logging: true
+  log_directory: "reports/logs"
+  include_memory_monitoring: true
+  include_process_info: true
+  structured_metrics: true
+  pipeline_state_tracking: true
 
 # System resource monitoring
 system:
@@ -92,3 +98,11 @@ validation:
   max_missing_rate: 0.5  # Maximum allowed missing rate per column
   enable_schema_validation: true
   enable_data_quality_checks: true
+
+# Pipeline behavior and idempotency
+pipeline:
+  overwrite_behavior: "warn"  # Options: "allow", "warn", "prevent", "prompt"
+  enable_state_tracking: true
+  state_file: "pipeline_state.json"
+  resume_from_failure: true
+  backup_existing_files: false

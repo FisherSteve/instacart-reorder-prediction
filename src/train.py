@@ -34,6 +34,10 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 # Import configuration utilities
 from config_utils import load_config, get_model_config
+from logging_utils import (
+    configure_logging_from_config, log_execution_time, log_memory_usage,
+    log_structured_metrics, log_file_operation, check_operation_idempotency
+)
 
 # Optional imports für XGBoost und LightGBM
 try:
@@ -276,7 +280,7 @@ Beispiele:
     return args
 
 
-def load_and_prepare_data(features_path: str = "data/features.parquet") -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+def load_and_prepare_data(features_path: str = "data/features/features.parquet") -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
     """
     Lade Feature-Daten mit robuster Fehlerbehandlung.
     
@@ -350,8 +354,10 @@ def load_and_prepare_data(features_path: str = "data/features.parquet") -> Tuple
         if not np.array_equal(unique_labels, [0, 1]) and not np.array_equal(unique_labels, [0]) and not np.array_equal(unique_labels, [1]):
             warnings.warn(f"Unerwartete Label-Werte: {unique_labels}. Erwartet: [0, 1]")
         
-        # Features = alles außer y und user_id
-        feature_columns = [col for col in full_df.columns if col not in ['y', 'user_id']]
+        # Features = alles außer y, user_id und product_id
+        # product_id wird nicht als Feature verwendet, da es zu hochdimensional ist (49k+ unique Werte)
+        # Stattdessen verwenden wir die aggregierten Product-Features: prod_cnt, prod_users, prod_avg_reorder_rate, aisle_id, department_id
+        feature_columns = [col for col in full_df.columns if col not in ['y', 'user_id', 'product_id']]
         
         if not feature_columns:
             raise ValueError("Keine Feature-Spalten gefunden!")
@@ -957,7 +963,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"\n[FEHLER] Schritt 1 fehlgeschlagen: {e}", file=sys.stderr)
             print("\nLösungsvorschläge:")
-            print("- Prüfe ob data/features.parquet existiert")
+            print("- Prüfe ob data/features/features.parquet existiert")
             print("- Führe 'python src/build_dataset.py' aus")
             print("- Prüfe verfügbaren Speicher")
             sys.exit(1)

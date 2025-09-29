@@ -1,0 +1,9 @@
+2025-09-29 18:38:44,965 - INFO - File logging enabled: reports/logs/__main___report_20250929_183844.log
+2025-09-29 18:38:44,966 - INFO - Memory usage at startup: Process RSS=88.5MB (0.5% of system RAM), System: 4.2GB available (73.7% used)
+2025-09-29 18:38:44,966 - INFO - === Instacart Reorder Prediction - Automated Reporting ===
+2025-09-29 18:38:44,966 - INFO - Reports Verzeichnis: reports
+2025-09-29 18:38:44,966 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:38:44.966855", "context": "report_config", "metrics": {"reports_dir": "reports", "leaderboard_file": "reports\\metrics_leaderboard.csv", "html_report_file": "reports\\report.html"}}
+2025-09-29 18:38:44,968 - INFO - Starting collect_metrics (initial memory: 88.5 MB)
+2025-09-29 18:38:44,968 - ERROR - Failed collect_metrics after 0.00s: name 'logger' is not defined (memory change: +0.0 MB)
+2025-09-29 18:38:44,968 - ERROR - Report generation failed: name 'logger' is not defined
+2025-09-29 18:38:44,969 - INFO - Memory usage at error: Process RSS=88.5MB (0.5% of system RAM), System: 4.2GB available (73.7% used)

@@ -102,7 +102,7 @@ echo.
 echo Training model: %MODEL%
 call :check_config
 call :check_python
-if not exist "data\features.parquet" (
+if not exist "data\features\features.parquet" (
     echo Features not found. Running build first...
     call :build
 )
@@ -164,7 +164,7 @@ goto end
 echo.
 echo Cleaning intermediate and output files...
 echo Removing feature datasets...
-if exist "data\features.parquet" del /q "data\features.parquet"
+if exist "data\features\features.parquet" del /q "data\features\features.parquet"
 if exist "data\intermediate" rmdir /s /q "data\intermediate"
 echo Removing model outputs...
 if exist "reports\model_*.joblib" del /q "reports\model_*.joblib"
@@ -189,10 +189,10 @@ if exist "%CONFIG%" (
 )
 echo.
 echo Data:
-if exist "data\features.parquet" (
-    echo   ✓ Features: data\features.parquet
+if exist "data\features\features.parquet" (
+    echo   ✓ Features: data\features\features.parquet
 ) else (
-    echo   ✗ Features: data\features.parquet ^(run 'pipeline.bat build'^)
+    echo   ✗ Features: data\features\features.parquet ^(run 'pipeline.bat build'^)
 )
 echo.
 echo Models:

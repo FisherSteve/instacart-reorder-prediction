@@ -1,0 +1,24 @@
+2025-09-29 18:39:51,111 - INFO - File logging enabled: reports/logs/__main___report_20250929_183951.log
+2025-09-29 18:39:51,113 - INFO - Memory usage at startup: Process RSS=88.5MB (0.5% of system RAM), System: 4.1GB available (74.4% used)
+2025-09-29 18:39:51,113 - INFO - === Instacart Reorder Prediction - Automated Reporting ===
+2025-09-29 18:39:51,113 - INFO - Reports Verzeichnis: reports
+2025-09-29 18:39:51,113 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:39:51.113360", "context": "report_config", "metrics": {"reports_dir": "reports", "leaderboard_file": "reports\\metrics_leaderboard.csv", "html_report_file": "reports\\report.html"}}
+2025-09-29 18:39:51,121 - INFO - Starting collect_metrics (initial memory: 88.5 MB)
+2025-09-29 18:39:51,123 - INFO - Gefundene Metrics-Dateien: 1
+2025-09-29 18:39:51,123 - INFO - Completed collect_metrics in 0.00s (memory change: +0.0 MB)
+2025-09-29 18:39:51,124 - INFO - Starting create_leaderboard (initial memory: 88.5 MB)
+2025-09-29 18:39:51,130 - INFO - Completed create_leaderboard in 0.01s (memory change: +0.8 MB)
+2025-09-29 18:39:51,131 - INFO - Starting save_csv (initial memory: 89.3 MB)
+2025-09-29 18:39:51,131 - WARNING - File operation will overwrite existing data: CREATE reports\metrics_leaderboard.csv
+2025-09-29 18:39:51,131 - WARNING - File operation: CREATE reports\metrics_leaderboard.csv (existing file, 338 bytes, modified 2025-09-29 17:24:44) - OVERWRITING EXISTING DATA at 2025-09-29 18:39:51
+2025-09-29 18:39:51,135 - INFO - Completed save_csv in 0.00s (memory change: +0.1 MB)
+2025-09-29 18:39:51,137 - INFO - Starting generate_html (initial memory: 89.4 MB)
+2025-09-29 18:39:51,137 - WARNING - File operation will overwrite existing data: CREATE reports\report.html
+2025-09-29 18:39:51,137 - WARNING - File operation: CREATE reports\report.html (existing file, 7,701 bytes, modified 2025-09-29 17:24:44) - OVERWRITING EXISTING DATA at 2025-09-29 18:39:51
+2025-09-29 18:39:51,138 - INFO - Completed generate_html in 0.00s (memory change: +0.2 MB)
+2025-09-29 18:39:51,140 - INFO - Memory usage at completion: Process RSS=89.6MB (0.5% of system RAM), System: 4.1GB available (74.4% used)
+2025-09-29 18:39:51,140 - INFO - === Automated Reporting abgeschlossen ===
+2025-09-29 18:39:51,140 - INFO - Outputs:
+2025-09-29 18:39:51,141 - INFO -   - reports\metrics_leaderboard.csv
+2025-09-29 18:39:51,141 - INFO -   - reports\report.html
+2025-09-29 18:39:51,141 - INFO - Öffne reports\report.html im Browser für den vollständigen Report!

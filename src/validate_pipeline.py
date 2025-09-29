@@ -35,12 +35,12 @@ def check_required_files() -> bool:
     log_step("Checking required input files...")
     
     required_files = [
-        "data/orders.csv",
-        "data/order_products__prior.csv", 
-        "data/order_products__train.csv",
-        "data/products.csv",
-        "data/aisles.csv",
-        "data/departments.csv"
+        "data/raw/orders.csv",
+        "data/raw/order_products__prior.csv", 
+        "data/raw/order_products__train.csv",
+        "data/raw/products.csv",
+        "data/raw/aisles.csv",
+        "data/raw/departments.csv"
     ]
     
     missing_files = []
@@ -67,9 +67,9 @@ def check_data_leakage() -> bool:
     
     try:
         # Lade die relevanten Dateien
-        orders = pd.read_csv("data/orders.csv")
-        prior_products = pd.read_csv("data/order_products__prior.csv")
-        train_products = pd.read_csv("data/order_products__train.csv")
+        orders = pd.read_csv("data/raw/orders.csv")
+        prior_products = pd.read_csv("data/raw/order_products__prior.csv")
+        train_products = pd.read_csv("data/raw/order_products__train.csv")
         
         # Identifiziere train vs prior orders
         train_orders = set(orders[orders['eval_set'] == 'train']['order_id'])
@@ -113,8 +113,8 @@ def run_build_dataset() -> bool:
     
     try:
         # Lösche alte features.parquet falls vorhanden
-        if os.path.exists("data/features.parquet"):
-            os.remove("data/features.parquet")
+        if os.path.exists("data/features/features.parquet"):
+            os.remove("data/features/features.parquet")
         
         # Führe build_dataset.py aus
         result = subprocess.run([
@@ -127,7 +127,7 @@ def run_build_dataset() -> bool:
             return False
         
         # Prüfe ob features.parquet erstellt wurde
-        if not os.path.exists("data/features.parquet"):
+        if not os.path.exists("data/features/features.parquet"):
             log_step("ERROR: features.parquet was not created")
             return False
         
@@ -151,7 +151,7 @@ def validate_features_dataset() -> bool:
     log_step("Validating features dataset...")
     
     try:
-        df = pd.read_parquet("data/features.parquet")
+        df = pd.read_parquet("data/features/features.parquet")
         
         # Check 1: Erwartete Spalten vorhanden
         expected_columns = [

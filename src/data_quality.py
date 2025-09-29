@@ -55,7 +55,20 @@ class DataQualityChecker:
         for dataset_name, file_path in file_paths.items():
             try:
                 # Count rows efficiently without loading full dataset
-                row_count = sum(1 for _ in open(file_path)) - 1  # Subtract header
+                # Try different encodings to handle various CSV files
+                encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                row_count = None
+                
+                for encoding in encodings:
+                    try:
+                        with open(file_path, 'r', encoding=encoding) as f:
+                            row_count = sum(1 for _ in f) - 1  # Subtract header
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                
+                if row_count is None:
+                    raise Exception("Could not decode file with any supported encoding")
                 row_count_metrics[dataset_name] = {
                     "row_count": row_count,
                     "file_path": file_path,
@@ -120,7 +133,19 @@ class DataQualityChecker:
         for dataset_name, file_path in file_paths.items():
             try:
                 # Load dataset (sample for large files)
-                df = pd.read_csv(file_path, nrows=50000)  # Sample for performance
+                # Try different encodings to handle various CSV files
+                encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                df = None
+                
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(file_path, nrows=50000, encoding=encoding)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                
+                if df is None:
+                    raise Exception("Could not decode file with any supported encoding")
                 
                 duplicate_info = {
                     "total_rows": len(df),
@@ -210,7 +235,19 @@ class DataQualityChecker:
         for dataset_name, file_path in file_paths.items():
             try:
                 # Load dataset (sample for large files)
-                df = pd.read_csv(file_path, nrows=50000)
+                # Try different encodings to handle various CSV files
+                encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                df = None
+                
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(file_path, nrows=50000, encoding=encoding)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                
+                if df is None:
+                    raise Exception("Could not decode file with any supported encoding")
                 
                 # Calculate null rates for each column
                 null_counts = df.isnull().sum()
@@ -288,7 +325,21 @@ class DataQualityChecker:
             datasets = {}
             for name, path in file_paths.items():
                 try:
-                    datasets[name] = pd.read_csv(path, nrows=10000)  # Sample for performance
+                    # Try different encodings to handle various CSV files
+                    encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                    df = None
+                    
+                    for encoding in encodings:
+                        try:
+                            df = pd.read_csv(path, nrows=10000, encoding=encoding)
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    
+                    if df is not None:
+                        datasets[name] = df
+                    else:
+                        raise Exception("Could not decode file with any supported encoding")
                 except Exception as e:
                     logging.warning(f"Cannot load {name} for business rule validation: {e}")
                     continue

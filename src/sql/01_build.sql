@@ -15,34 +15,34 @@
 -- Bestellungen (orders.csv)
 -- Enthält: order_id, user_id, eval_set, order_number, order_dow, order_hour_of_day, days_since_prior_order
 CREATE OR REPLACE VIEW orders_raw AS
-SELECT * FROM read_csv_auto('data/orders.csv');
+SELECT * FROM read_csv_auto('data/raw/orders.csv');
 
 -- Produkte in Bestellungen - Prior Set (order_products__prior.csv)  
 -- Enthält: order_id, product_id, add_to_cart_order, reordered
 -- Wichtig: Nur diese Daten verwenden wir für Feature-Engineering!
 CREATE OR REPLACE VIEW order_products_prior_raw AS
-SELECT * FROM read_csv_auto('data/order_products__prior.csv');
+SELECT * FROM read_csv_auto('data/raw/order_products__prior.csv');
 
 -- Produkte in Bestellungen - Train Set (order_products__train.csv)
 -- Enthält: order_id, product_id, add_to_cart_order, reordered  
 -- Wichtig: Nur für Labels verwenden, NICHT für Features!
 CREATE OR REPLACE VIEW order_products_train_raw AS
-SELECT * FROM read_csv_auto('data/order_products__train.csv');
+SELECT * FROM read_csv_auto('data/raw/order_products__train.csv');
 
 -- Produktkatalog (products.csv)
 -- Enthält: product_id, product_name, aisle_id, department_id
 CREATE OR REPLACE VIEW products_raw AS
-SELECT * FROM read_csv_auto('data/products.csv');
+SELECT * FROM read_csv_auto('data/raw/products.csv');
 
 -- Gänge/Aisles (aisles.csv)
 -- Enthält: aisle_id, aisle
 CREATE OR REPLACE VIEW aisles_raw AS
-SELECT * FROM read_csv_auto('data/aisles.csv');
+SELECT * FROM read_csv_auto('data/raw/aisles.csv');
 
 -- Abteilungen/Departments (departments.csv)  
 -- Enthält: department_id, department
 CREATE OR REPLACE VIEW departments_raw AS
-SELECT * FROM read_csv_auto('data/departments.csv');
+SELECT * FROM read_csv_auto('data/raw/departments.csv');
 
 -- ============================================================================
 -- 2) PRIOR/TRAIN TRENNUNG

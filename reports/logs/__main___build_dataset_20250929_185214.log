@@ -1,0 +1,75 @@
+2025-09-29 18:52:14,079 - INFO - File logging enabled: reports/logs/__main___build_dataset_20250929_185214.log
+2025-09-29 18:52:14,079 - INFO - Memory usage at startup: Process RSS=113.8MB (0.7% of system RAM), System: 4.4GB available (72.6% used)
+2025-09-29 18:52:14,079 - INFO - ============================================================
+2025-09-29 18:52:14,079 - INFO - INSTACART REORDER PREDICTION - DATASET BUILDER
+2025-09-29 18:52:14,079 - INFO - ============================================================
+2025-09-29 18:52:14,080 - INFO - Als Lernprojekt bewusst ausführlich kommentiert
+2025-09-29 18:52:14,080 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:52:14.080663", "context": "build_dataset_config", "metrics": {"sql_file": "src/sql/01_build.sql", "output_file": "data/features/features.parquet", "raw_data_path": "data/raw", "max_users_sampling": null, "skip_validation": false, "skip_quality_checks": false}}
+2025-09-29 18:52:14,088 - INFO - Starting input_validation (initial memory: 113.8 MB)
+2025-09-29 18:52:14,089 - INFO - Alle benötigten CSV-Dateien gefunden
+2025-09-29 18:52:14,090 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:52:14.090112", "context": "input_file_sizes", "metrics": {"orders.csv": 103.92059803009033, "order_products__prior.csv": 550.7952747344971, "order_products__train.csv": 23.53682231903076, "products.csv": 2.0665674209594727, "aisles.csv": 0.0024824142456054688, "departments.csv": 0.0002574920654296875}}
+2025-09-29 18:52:14,090 - INFO - Completed input_validation in 0.00s (memory change: +0.0 MB)
+2025-09-29 18:52:14,091 - INFO - Starting schema_validation (initial memory: 113.8 MB)
+2025-09-29 18:52:14,091 - INFO - Starte Schema-Validierung der CSV-Dateien...
+2025-09-29 18:52:14,091 - INFO -   Validiere data/raw/orders.csv gegen orders Schema...
+2025-09-29 18:52:14,105 - INFO -     Geladen: 10000 Zeilen, 7 Spalten
+2025-09-29 18:52:14,218 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,219 - INFO -     Null-Werte gefunden:
+2025-09-29 18:52:14,219 - INFO -       days_since_prior_order: 633 (6.3%)
+2025-09-29 18:52:14,219 - INFO -   Validiere data/raw/products.csv gegen products Schema...
+2025-09-29 18:52:14,227 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:52:14,236 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,237 - INFO -   Validiere data/raw/aisles.csv gegen aisles Schema...
+2025-09-29 18:52:14,238 - INFO -     Geladen: 134 Zeilen, 2 Spalten
+2025-09-29 18:52:14,242 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,242 - INFO -   Validiere data/raw/departments.csv gegen departments Schema...
+2025-09-29 18:52:14,243 - INFO -     Geladen: 21 Zeilen, 2 Spalten
+2025-09-29 18:52:14,247 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,248 - INFO -   Validiere data/raw/order_products__prior.csv gegen order_products__prior Schema...
+2025-09-29 18:52:14,251 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:52:14,256 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,256 - INFO -   Validiere data/raw/order_products__train.csv gegen order_products__train Schema...
+2025-09-29 18:52:14,259 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:52:14,263 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:52:14,264 - INFO - [OK] Alle CSV-Dateien haben die Schema-Validierung bestanden
+2025-09-29 18:52:14,264 - INFO - 
+2025-09-29 18:52:14,264 - INFO - Schema-Übersicht:
+2025-09-29 18:52:14,264 - INFO -   order_products__train: 4 Spalten
+2025-09-29 18:52:14,264 - INFO -   order_products__prior: 4 Spalten
+2025-09-29 18:52:14,264 - INFO -   products: 4 Spalten
+2025-09-29 18:52:14,264 - INFO -   aisles: 2 Spalten
+2025-09-29 18:52:14,265 - INFO -   orders: 7 Spalten
+2025-09-29 18:52:14,265 - INFO -   departments: 2 Spalten
+2025-09-29 18:52:14,265 - INFO - Completed schema_validation in 0.17s (memory change: +11.8 MB)
+2025-09-29 18:52:14,265 - INFO - Starting data_quality_checks (initial memory: 125.7 MB)
+2025-09-29 18:52:14,265 - INFO - Starte umfassende Datenqualitätsprüfungen...
+2025-09-29 18:52:17,008 - INFO - Datenqualitätsprüfungen abgeschlossen
+2025-09-29 18:52:17,008 - INFO -   Qualitätsbericht: data\quality_reports\data_quality_report_20250929_185217.json
+2025-09-29 18:52:17,015 - INFO -   Qualitätsstatus: FAIL
+2025-09-29 18:52:17,015 - INFO -   Verstöße gesamt: 1
+2025-09-29 18:52:17,015 - INFO -   Hohe Schwere: 1
+2025-09-29 18:52:17,015 - WARNING - WARNUNG: Kritische Datenqualitätsprobleme gefunden!
+2025-09-29 18:52:17,017 - WARNING - Prüfe den Qualitätsbericht vor dem Fortfahren.
+2025-09-29 18:52:17,017 - WARNING - Verwende --skip-quality-checks um zu überspringen (nicht empfohlen)
+2025-09-29 18:52:17,017 - INFO - Completed data_quality_checks in 2.75s (memory change: +1.2 MB)
+2025-09-29 18:52:17,018 - INFO - Starting sql_query_loading (initial memory: 126.9 MB)
+2025-09-29 18:52:17,019 - INFO - SQL-Query geladen aus src/sql/01_build.sql
+2025-09-29 18:52:17,019 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:52:17.019378", "context": "sql_query_loaded", "metrics": {"file_path": "src/sql/01_build.sql", "query_length_chars": 13107, "query_lines": 327}}
+2025-09-29 18:52:17,019 - INFO - Completed sql_query_loading in 0.00s (memory change: -0.0 MB)
+2025-09-29 18:52:17,021 - INFO - Idempotency check for feature_engineering: Inputs are newer than outputs, execution needed
+2025-09-29 18:52:17,021 - INFO - Executing feature engineering: inputs_newer_than_outputs
+2025-09-29 18:52:17,022 - INFO - Starting feature_engineering (initial memory: 126.9 MB)
+2025-09-29 18:52:17,022 - INFO - Starte Feature Engineering mit DuckDB...
+2025-09-29 18:52:17,022 - WARNING - File operation will overwrite existing data: CREATE data/features/features.parquet
+2025-09-29 18:52:17,023 - WARNING - File operation: CREATE data/features/features.parquet (existing file, 147,685,519 bytes, modified 2025-09-29 17:43:53) - OVERWRITING EXISTING DATA at 2025-09-29 18:52:17
+2025-09-29 18:52:17,035 - INFO - DuckDB Verbindung hergestellt
+2025-09-29 18:52:17,035 - INFO - Führe SQL Feature Engineering aus...
+2025-09-29 18:52:17,035 - INFO -   - Lese CSV-Dateien aus data/ Verzeichnis
+2025-09-29 18:52:17,035 - INFO -   - Trenne Prior/Train Daten (Data Leakage Prevention)
+2025-09-29 18:52:17,035 - INFO -   - Berechne User-Product Interaction Features
+2025-09-29 18:52:17,035 - INFO -   - Berechne Recency Features
+2025-09-29 18:52:17,035 - INFO -   - Berechne Product Popularity Features
+2025-09-29 18:52:17,035 - INFO -   - Füge Categorical Features hinzu
+2025-09-29 18:52:17,036 - INFO -   - Generiere Labels aus Train Data
+2025-09-29 18:52:27,552 - INFO - [OK] SQL Feature Engineering abgeschlossen in 10.52 Sekunden
+2025-09-29 18:52:27,552 - INFO - Exportiere Ergebnis nach data/features/features.parquet...

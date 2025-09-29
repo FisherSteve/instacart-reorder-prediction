@@ -1,0 +1,135 @@
+{
+  "created_at": "2025-09-29T18:03:55.586927",
+  "steps": {
+    "test_operation": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:03:55.586927",
+      "end_time": "2025-09-29T18:03:56.588813",
+      "duration_seconds": 1.001886,
+      "metadata": {
+        "initial_memory_mb": 28.13671875,
+        "duration_seconds": 1.0003433227539062,
+        "final_memory_mb": 27.32421875,
+        "memory_change_mb": -0.8125
+      }
+    },
+    "test_step": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:03:56.591429",
+      "end_time": "2025-09-29T18:03:57.092181",
+      "duration_seconds": 0.500752,
+      "metadata": {
+        "test_metric": 42
+      }
+    },
+    "collect_metrics": {
+      "status": "completed",
+      "start_time": "2025-09-29T19:38:39.462327",
+      "end_time": "2025-09-29T19:38:39.518125",
+      "duration_seconds": 0.055798,
+      "metadata": {
+        "initial_memory_mb": 88.27734375,
+        "duration_seconds": 0.05579829216003418,
+        "final_memory_mb": 88.3046875,
+        "memory_change_mb": 0.02734375
+      }
+    },
+    "create_leaderboard": {
+      "status": "completed",
+      "start_time": "2025-09-29T19:38:39.518125",
+      "end_time": "2025-09-29T19:38:39.577184",
+      "duration_seconds": 0.059059,
+      "metadata": {
+        "initial_memory_mb": 88.30859375,
+        "duration_seconds": 0.05905890464782715,
+        "final_memory_mb": 89.17578125,
+        "memory_change_mb": 0.8671875
+      }
+    },
+    "save_csv": {
+      "status": "completed",
+      "start_time": "2025-09-29T19:38:39.577184",
+      "end_time": "2025-09-29T19:38:39.644936",
+      "duration_seconds": 0.067752,
+      "metadata": {
+        "initial_memory_mb": 89.1875,
+        "duration_seconds": 0.06591367721557617,
+        "final_memory_mb": 89.953125,
+        "memory_change_mb": 0.765625
+      }
+    },
+    "generate_html": {
+      "status": "completed",
+      "start_time": "2025-09-29T19:38:39.644936",
+      "end_time": "2025-09-29T19:38:39.659098",
+      "duration_seconds": 0.014162,
+      "metadata": {
+        "initial_memory_mb": 89.953125,
+        "duration_seconds": 0.013648271560668945,
+        "final_memory_mb": 90.109375,
+        "memory_change_mb": 0.15625
+      }
+    },
+    "input_validation": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:56:58.605179",
+      "end_time": "2025-09-29T18:56:58.643897",
+      "duration_seconds": 0.038718,
+      "metadata": {
+        "initial_memory_mb": 113.9765625,
+        "duration_seconds": 0.0010063648223876953,
+        "final_memory_mb": 113.99609375,
+        "memory_change_mb": 0.01953125
+      }
+    },
+    "schema_validation": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:56:58.643897",
+      "end_time": "2025-09-29T18:56:58.953833",
+      "duration_seconds": 0.309936,
+      "metadata": {
+        "initial_memory_mb": 114.0,
+        "duration_seconds": 0.3087441921234131,
+        "final_memory_mb": 125.99609375,
+        "memory_change_mb": 11.99609375
+      }
+    },
+    "data_quality_checks": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:56:58.955973",
+      "end_time": "2025-09-29T18:57:07.577578",
+      "duration_seconds": 8.621605,
+      "metadata": {
+        "initial_memory_mb": 126.0078125,
+        "duration_seconds": 8.621091365814209,
+        "final_memory_mb": 126.6875,
+        "memory_change_mb": 0.6796875
+      }
+    },
+    "sql_query_loading": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:57:07.577578",
+      "end_time": "2025-09-29T18:57:07.601616",
+      "duration_seconds": 0.024038,
+      "metadata": {
+        "initial_memory_mb": 126.69921875,
+        "duration_seconds": 0.024037837982177734,
+        "final_memory_mb": 126.71484375,
+        "memory_change_mb": 0.015625
+      }
+    },
+    "feature_engineering": {
+      "status": "completed",
+      "start_time": "2025-09-29T18:52:42.151372",
+      "end_time": "2025-09-29T18:53:08.352992",
+      "duration_seconds": 26.20162,
+      "metadata": {
+        "initial_memory_mb": 126.29296875,
+        "duration_seconds": 26.200184106826782,
+        "final_memory_mb": 200.4296875,
+        "memory_change_mb": 74.13671875
+      }
+    }
+  },
+  "last_update": "2025-09-29T19:38:39.659098"
+}

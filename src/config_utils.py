@@ -371,7 +371,7 @@ def create_example_config(output_path: str = "config.yaml.example") -> None:
 
 data:
   raw_path: "data/raw"
-  features_file: "data/features.parquet"
+  features_file: "data/features/features.parquet"
   sql_file: "src/sql/01_build.sql"
 
 sampling:

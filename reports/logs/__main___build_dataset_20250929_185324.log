@@ -1,0 +1,73 @@
+2025-09-29 18:53:24,278 - INFO - File logging enabled: reports/logs/__main___build_dataset_20250929_185324.log
+2025-09-29 18:53:24,279 - INFO - Memory usage at startup: Process RSS=114.2MB (0.7% of system RAM), System: 5.3GB available (66.5% used)
+2025-09-29 18:53:24,279 - INFO - ============================================================
+2025-09-29 18:53:24,279 - INFO - INSTACART REORDER PREDICTION - DATASET BUILDER
+2025-09-29 18:53:24,280 - INFO - ============================================================
+2025-09-29 18:53:24,280 - INFO - Als Lernprojekt bewusst ausführlich kommentiert
+2025-09-29 18:53:24,280 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:53:24.280405", "context": "build_dataset_config", "metrics": {"sql_file": "src/sql/01_build.sql", "output_file": "data/features/features.parquet", "raw_data_path": "data/raw", "max_users_sampling": null, "skip_validation": false, "skip_quality_checks": false}}
+2025-09-29 18:53:24,289 - INFO - Starting input_validation (initial memory: 114.2 MB)
+2025-09-29 18:53:24,290 - INFO - Alle benötigten CSV-Dateien gefunden
+2025-09-29 18:53:24,291 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:53:24.291019", "context": "input_file_sizes", "metrics": {"orders.csv": 103.92059803009033, "order_products__prior.csv": 550.7952747344971, "order_products__train.csv": 23.53682231903076, "products.csv": 2.0665674209594727, "aisles.csv": 0.0024824142456054688, "departments.csv": 0.0002574920654296875}}
+2025-09-29 18:53:24,291 - INFO - Completed input_validation in 0.00s (memory change: +0.0 MB)
+2025-09-29 18:53:24,292 - INFO - Starting schema_validation (initial memory: 114.2 MB)
+2025-09-29 18:53:24,293 - INFO - Starte Schema-Validierung der CSV-Dateien...
+2025-09-29 18:53:24,293 - INFO -   Validiere data/raw/orders.csv gegen orders Schema...
+2025-09-29 18:53:24,300 - INFO -     Geladen: 10000 Zeilen, 7 Spalten
+2025-09-29 18:53:24,324 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,324 - INFO -     Null-Werte gefunden:
+2025-09-29 18:53:24,324 - INFO -       days_since_prior_order: 633 (6.3%)
+2025-09-29 18:53:24,324 - INFO -   Validiere data/raw/products.csv gegen products Schema...
+2025-09-29 18:53:24,331 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:53:24,342 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,342 - INFO -   Validiere data/raw/aisles.csv gegen aisles Schema...
+2025-09-29 18:53:24,344 - INFO -     Geladen: 134 Zeilen, 2 Spalten
+2025-09-29 18:53:24,348 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,348 - INFO -   Validiere data/raw/departments.csv gegen departments Schema...
+2025-09-29 18:53:24,349 - INFO -     Geladen: 21 Zeilen, 2 Spalten
+2025-09-29 18:53:24,352 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,352 - INFO -   Validiere data/raw/order_products__prior.csv gegen order_products__prior Schema...
+2025-09-29 18:53:24,356 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:53:24,361 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,361 - INFO -   Validiere data/raw/order_products__train.csv gegen order_products__train Schema...
+2025-09-29 18:53:24,363 - INFO -     Geladen: 10000 Zeilen, 4 Spalten
+2025-09-29 18:53:24,368 - INFO -     [OK] Schema-Validierung erfolgreich
+2025-09-29 18:53:24,368 - INFO - [OK] Alle CSV-Dateien haben die Schema-Validierung bestanden
+2025-09-29 18:53:24,369 - INFO - 
+2025-09-29 18:53:24,369 - INFO - Schema-Übersicht:
+2025-09-29 18:53:24,369 - INFO -   products: 4 Spalten
+2025-09-29 18:53:24,369 - INFO -   order_products__prior: 4 Spalten
+2025-09-29 18:53:24,369 - INFO -   orders: 7 Spalten
+2025-09-29 18:53:24,369 - INFO -   order_products__train: 4 Spalten
+2025-09-29 18:53:24,369 - INFO -   aisles: 2 Spalten
+2025-09-29 18:53:24,369 - INFO -   departments: 2 Spalten
+2025-09-29 18:53:24,369 - INFO - Completed schema_validation in 0.08s (memory change: +11.7 MB)
+2025-09-29 18:53:24,372 - INFO - Starting data_quality_checks (initial memory: 125.9 MB)
+2025-09-29 18:53:24,372 - INFO - Starte umfassende Datenqualitätsprüfungen...
+2025-09-29 18:53:27,078 - INFO - Datenqualitätsprüfungen abgeschlossen
+2025-09-29 18:53:27,078 - INFO -   Qualitätsbericht: data\quality_reports\data_quality_report_20250929_185327.json
+2025-09-29 18:53:27,086 - INFO -   Qualitätsstatus: FAIL
+2025-09-29 18:53:27,086 - INFO -   Verstöße gesamt: 1
+2025-09-29 18:53:27,086 - INFO -   Hohe Schwere: 1
+2025-09-29 18:53:27,086 - WARNING - WARNUNG: Kritische Datenqualitätsprobleme gefunden!
+2025-09-29 18:53:27,086 - WARNING - Prüfe den Qualitätsbericht vor dem Fortfahren.
+2025-09-29 18:53:27,086 - WARNING - Verwende --skip-quality-checks um zu überspringen (nicht empfohlen)
+2025-09-29 18:53:27,087 - INFO - Completed data_quality_checks in 2.72s (memory change: +1.3 MB)
+2025-09-29 18:53:27,087 - INFO - Starting sql_query_loading (initial memory: 127.3 MB)
+2025-09-29 18:53:27,089 - INFO - SQL-Query geladen aus src/sql/01_build.sql
+2025-09-29 18:53:27,089 - INFO - STRUCTURED_METRICS: {"timestamp": "2025-09-29T18:53:27.089907", "context": "sql_query_loaded", "metrics": {"file_path": "src/sql/01_build.sql", "query_length_chars": 13107, "query_lines": 327}}
+2025-09-29 18:53:27,090 - INFO - Completed sql_query_loading in 0.00s (memory change: +0.1 MB)
+2025-09-29 18:53:27,092 - INFO - Idempotency check for feature_engineering: Outputs are newer than inputs, skipping
+2025-09-29 18:53:27,092 - INFO - Idempotency check for feature_engineering: Previously completed and outputs current
+2025-09-29 18:53:27,092 - INFO - Skipping feature engineering: completed_and_outputs_current
+2025-09-29 18:53:27,092 - INFO - Existing output file: data/features/features.parquet
+2025-09-29 18:53:27,093 - INFO - Memory usage at completion: Process RSS=127.3MB (0.8% of system RAM), System: 5.3GB available (66.5% used)
+2025-09-29 18:53:27,093 - INFO - ============================================================
+2025-09-29 18:53:27,093 - INFO - DATASET BUILDING ERFOLGREICH ABGESCHLOSSEN!
+2025-09-29 18:53:27,093 - INFO - ============================================================
+2025-09-29 18:53:27,093 - INFO - Feature-Dataset erstellt: data/features/features.parquet
+2025-09-29 18:53:27,093 - INFO - Nächste Schritte:
+2025-09-29 18:53:27,094 - INFO -   1. python src/train.py --model logreg
+2025-09-29 18:53:27,094 - INFO -   2. python src/train.py --model xgb
+2025-09-29 18:53:27,094 - INFO -   3. python src/train.py --model lgbm
+2025-09-29 18:53:27,094 - INFO -   4. python src/report.py
+2025-09-29 18:53:27,094 - INFO - Viel Erfolg beim ML-Training! 🚀

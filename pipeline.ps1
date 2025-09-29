@@ -53,7 +53,7 @@ function Invoke-Train {
     param([string]$ModelType)
     Write-Host "Training model: $ModelType" -ForegroundColor Green
     Test-Config
-    if (-not (Test-Path "data\features.parquet")) {
+    if (-not (Test-Path "data\features\features.parquet")) {
         Write-Host "Features not found. Running build first..." -ForegroundColor Yellow
         Invoke-Build
     }
@@ -101,8 +101,8 @@ function Invoke-Validate {
 function Invoke-Clean {
     Write-Host "Cleaning intermediate and output files..." -ForegroundColor Green
     Write-Host "Removing feature datasets..." -ForegroundColor Yellow
-    if (Test-Path "data\features.parquet") {
-        Remove-Item "data\features.parquet" -Force
+    if (Test-Path "data\features\features.parquet") {
+        Remove-Item "data\features\features.parquet" -Force
     }
     if (Test-Path "data\intermediate") {
         Remove-Item "data\intermediate" -Recurse -Force
@@ -134,10 +134,10 @@ function Show-Status {
     }
     Write-Host ""
     Write-Host "Data:" -ForegroundColor Yellow
-    if (Test-Path "data\features.parquet") {
-        Write-Host "  Features: data\features.parquet" -ForegroundColor Green
+    if (Test-Path "data\features\features.parquet") {
+        Write-Host "  Features: data\features\features.parquet" -ForegroundColor Green
     } else {
-        Write-Host "  Features: data\features.parquet (run build)" -ForegroundColor Red
+        Write-Host "  Features: data\features\features.parquet (run build)" -ForegroundColor Red
     }
     Write-Host ""
     Write-Host "Models:" -ForegroundColor Yellow

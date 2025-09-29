@@ -25,13 +25,17 @@ import argparse
 
 # Import configuration utilities
 from config_utils import load_config
+from logging_utils import (
+    configure_logging_from_config, log_execution_time, log_memory_usage,
+    log_structured_metrics, log_file_operation
+)
 
 # Für bessere Lesbarkeit der Pandas-Ausgabe
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 
 
-def discover_metrics_files(reports_dir: str = "reports") -> List[str]:
+def discover_metrics_files(reports_dir: str = "reports", logger=None) -> List[str]:
     """
     Findet alle metrics_*.json Dateien im reports/ Verzeichnis.
     
@@ -50,9 +54,14 @@ def discover_metrics_files(reports_dir: str = "reports") -> List[str]:
     # Glob findet alle Dateien die dem Pattern entsprechen
     metrics_files = glob.glob(pattern)
     
-    print(f"Gefundene Metrics-Dateien: {len(metrics_files)}")
-    for file_path in metrics_files:
-        print(f"  - {file_path}")
+    if logger:
+        logger.info(f"Gefundene Metrics-Dateien: {len(metrics_files)}")
+        for file_path in metrics_files:
+            logger.debug(f"  - {file_path}")
+    else:
+        print(f"Gefundene Metrics-Dateien: {len(metrics_files)}")
+        for file_path in metrics_files:
+            print(f"  - {file_path}")
     
     return metrics_files
 
@@ -95,7 +104,7 @@ def load_metrics_file(file_path: str) -> Dict[str, Any]:
         return None
 
 
-def collect_all_metrics(reports_dir: str = "reports") -> List[Dict[str, Any]]:
+def collect_all_metrics(reports_dir: str = "reports", logger = None) -> List[Dict[str, Any]]:
     """
     Sammelt alle Metrics aus allen gefundenen JSON-Dateien.
     
@@ -108,11 +117,17 @@ def collect_all_metrics(reports_dir: str = "reports") -> List[Dict[str, Any]]:
     Returns:
         Liste aller erfolgreich geladenen Metrics
     """
-    metrics_files = discover_metrics_files(reports_dir)
+    metrics_files = discover_metrics_files(reports_dir, logger)
     
     if not metrics_files:
-        print(f"Keine metrics_*.json Dateien in {reports_dir}/ gefunden!")
-        print("Führe zuerst 'python src/train.py --model [logreg|xgb|lgbm]' aus.")
+        message = f"Keine metrics_*.json Dateien in {reports_dir}/ gefunden!"
+        instruction = "Führe zuerst 'python src/train.py --model [logreg|xgb|lgbm]' aus."
+        if logger:
+            logger.warning(message)
+            logger.info(instruction)
+        else:
+            print(message)
+            print(instruction)
         return []
     
     all_metrics = []
@@ -126,7 +141,7 @@ def collect_all_metrics(reports_dir: str = "reports") -> List[Dict[str, Any]]:
     return all_metrics
 
 
-def create_leaderboard_dataframe(all_metrics: List[Dict[str, Any]]) -> pd.DataFrame:
+def create_leaderboard_dataframe(all_metrics: List[Dict[str, Any]], logger = None) -> pd.DataFrame:
     """
     Erstellt pandas DataFrame aus Metrics und sortiert nach ROC-AUC.
     
@@ -167,7 +182,7 @@ def create_leaderboard_dataframe(all_metrics: List[Dict[str, Any]]) -> pd.DataFr
     return leaderboard_df
 
 
-def save_leaderboard_csv(leaderboard_df: pd.DataFrame, output_path: str = "reports/metrics_leaderboard.csv"):
+def save_leaderboard_csv(leaderboard_df: pd.DataFrame, output_path: str = "reports/metrics_leaderboard.csv", logger = None):
     """
     Speichert Leaderboard als CSV-Datei.
     
@@ -193,7 +208,7 @@ def save_leaderboard_csv(leaderboard_df: pd.DataFrame, output_path: str = "repor
         print(f"Fehler beim Speichern der CSV: {e}")
 
 
-def generate_html_report(leaderboard_df: pd.DataFrame, output_path: str = "reports/report.html"):
+def generate_html_report(leaderboard_df: pd.DataFrame, output_path: str = "reports/report.html", logger = None):
     """
     Generiert HTML-Report mit Modellvergleich und Projektbeschreibung.
     
@@ -302,6 +317,70 @@ def generate_html_report(leaderboard_df: pd.DataFrame, output_path: str = "repor
             color: #6c757d;
             font-size: 12px;
         }}
+        .lineage-diagram {{
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }}
+        .flow-stage {{
+            margin: 15px 0;
+            text-align: center;
+        }}
+        .flow-stage h4 {{
+            margin: 10px 0;
+            color: #495057;
+            font-size: 16px;
+        }}
+        .flow-arrow {{
+            text-align: center;
+            font-size: 24px;
+            color: #6c757d;
+            margin: 10px 0;
+        }}
+        .data-sources, .output-files {{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+        }}
+        .data-file, .output-file {{
+            background-color: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+            border: 1px solid #bbdefb;
+        }}
+        .output-file {{
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }}
+        .process-box, .dataset-box, .training-box {{
+            background-color: white;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px auto;
+            max-width: 400px;
+            font-size: 13px;
+            line-height: 1.4;
+        }}
+        .process-box {{
+            border-color: #ffc107;
+            background-color: #fff8e1;
+        }}
+        .dataset-box {{
+            border-color: #17a2b8;
+            background-color: #e0f7fa;
+        }}
+        .training-box {{
+            border-color: #28a745;
+            background-color: #e8f5e8;
+        }}
     </style>
 </head>
 <body>
@@ -320,6 +399,85 @@ def generate_html_report(leaderboard_df: pd.DataFrame, output_path: str = "repor
         
         {model_table}
         
+        <div class="section">
+            <h2>🔄 Data Lineage & Pipeline Flow</h2>
+            <div class="lineage-diagram">
+                <div class="flow-stage">
+                    <h4>📁 Raw Data Sources</h4>
+                    <div class="data-sources">
+                        <span class="data-file">orders.csv</span>
+                        <span class="data-file">order_products__prior.csv</span>
+                        <span class="data-file">order_products__train.csv</span>
+                        <span class="data-file">products.csv</span>
+                        <span class="data-file">aisles.csv</span>
+                        <span class="data-file">departments.csv</span>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-stage">
+                    <h4>🔧 Feature Engineering</h4>
+                    <div class="process-box">
+                        <strong>src/sql/01_build.sql</strong><br>
+                        • User-product aggregations<br>
+                        • Temporal recency features<br>
+                        • Product popularity metrics<br>
+                        • Categorical lookups<br>
+                        • Label generation (train only)
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-stage">
+                    <h4>📊 ML-Ready Dataset</h4>
+                    <div class="dataset-box">
+                        <strong>data/features/features.parquet</strong><br>
+                        Schema: user_id, product_id, y, [55+ features]<br>
+                        Scale: 6.7M+ training samples
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-stage">
+                    <h4>🤖 Model Training</h4>
+                    <div class="training-box">
+                        <strong>src/train.py</strong><br>
+                        • GroupShuffleSplit (user-based)<br>
+                        • StandardScaler + OneHotEncoder<br>
+                        • LogReg / XGBoost / LightGBM<br>
+                        • Multi-metric evaluation
+                    </div>
+                </div>
+                
+                <div class="flow-arrow">⬇️</div>
+                
+                <div class="flow-stage">
+                    <h4>📈 Performance Reports</h4>
+                    <div class="output-files">
+                        <span class="output-file">model_*.joblib</span>
+                        <span class="output-file">metrics_*.json</span>
+                        <span class="output-file">metrics_leaderboard.csv</span>
+                        <span class="output-file">report.html</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <p><em>📋 Detailed data lineage documentation available in <code>docs/data_lineage.md</code></em></p>
+                <p><strong>Key Transformation Principles:</strong></p>
+                <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
+                    <li><strong>Temporal Separation:</strong> 'prior' orders → features, 'train' orders → labels only</li>
+                    <li><strong>User-Based Splitting:</strong> GroupShuffleSplit prevents user leakage</li>
+                    <li><strong>SQL-First Approach:</strong> DuckDB for efficient CSV processing</li>
+                    <li><strong>Comprehensive Features:</strong> 55+ engineered features from 6 raw data sources</li>
+                    <li><strong>Quality Assurance:</strong> Schema validation and data quality monitoring</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="methodology">
             <h2>🔬 Methodologie</h2>
             <ul>
@@ -551,41 +709,67 @@ def main():
         print(f"FEHLER beim Laden der Konfiguration: {e}")
         return
     
+    # Setup structured logging
+    logger = configure_logging_from_config(config, __name__, "report")
+    
+    # Log initial memory usage
+    log_memory_usage("startup", logger)
+    
     # Verwende Config-Werte
     output_config = config['output']
     reports_dir = output_config['reports_dir']
     leaderboard_file = os.path.join(reports_dir, output_config['leaderboard_file'])
     html_report_file = os.path.join(reports_dir, output_config['html_report_file'])
     
-    print("=== Instacart Reorder Prediction - Automated Reporting ===")
-    print(f"Reports Verzeichnis: {reports_dir}")
-    print()
+    logger.info("=== Instacart Reorder Prediction - Automated Reporting ===")
+    logger.info(f"Reports Verzeichnis: {reports_dir}")
     
-    # Schritt 1: Alle Metrics sammeln
-    print("1. Sammle alle Modell-Metriken...")
-    all_metrics = collect_all_metrics(reports_dir)
+    # Log configuration
+    config_metrics = {
+        "reports_dir": reports_dir,
+        "leaderboard_file": leaderboard_file,
+        "html_report_file": html_report_file
+    }
+    log_structured_metrics(config_metrics, "report_config", logger)
     
-    if not all_metrics:
-        print("Keine Metrics gefunden. Beende Programm.")
-        return
-    
-    # Schritt 2: Leaderboard DataFrame erstellen
-    print("\n2. Erstelle Leaderboard...")
-    leaderboard_df = create_leaderboard_dataframe(all_metrics)
-    
-    # Schritt 3: CSV speichern
-    print("\n3. Speichere Leaderboard als CSV...")
-    save_leaderboard_csv(leaderboard_df, leaderboard_file)
-    
-    # Schritt 4: HTML-Report generieren
-    print("\n4. Generiere HTML Performance Report...")
-    generate_html_report(leaderboard_df, html_report_file)
-    
-    print("\n=== Automated Reporting abgeschlossen ===")
-    print("Outputs:")
-    print(f"  - {leaderboard_file}")
-    print(f"  - {html_report_file}")
-    print(f"\nÖffne {html_report_file} im Browser für den vollständigen Report!")
+    try:
+        # Schritt 1: Alle Metrics sammeln
+        with log_execution_time("collect_metrics", logger):
+            all_metrics = collect_all_metrics(reports_dir, logger)
+        
+        if not all_metrics:
+            logger.warning("Keine Metrics gefunden. Beende Programm.")
+            return
+        
+        # Schritt 2: Leaderboard DataFrame erstellen
+        with log_execution_time("create_leaderboard", logger):
+            leaderboard_df = create_leaderboard_dataframe(all_metrics, logger)
+        
+        # Schritt 3: CSV speichern
+        with log_execution_time("save_csv", logger):
+            log_file_operation("create", leaderboard_file, logger, 
+                             overwrite=Path(leaderboard_file).exists(), config=config)
+            save_leaderboard_csv(leaderboard_df, leaderboard_file, logger)
+        
+        # Schritt 4: HTML-Report generieren
+        with log_execution_time("generate_html", logger):
+            log_file_operation("create", html_report_file, logger, 
+                             overwrite=Path(html_report_file).exists(), config=config)
+            generate_html_report(leaderboard_df, html_report_file, logger)
+        
+        # Log final memory usage
+        log_memory_usage("completion", logger)
+        
+        logger.info("=== Automated Reporting abgeschlossen ===")
+        logger.info("Outputs:")
+        logger.info(f"  - {leaderboard_file}")
+        logger.info(f"  - {html_report_file}")
+        logger.info(f"Öffne {html_report_file} im Browser für den vollständigen Report!")
+        
+    except Exception as e:
+        logger.error(f"Report generation failed: {e}")
+        log_memory_usage("error", logger)
+        raise
 
 
 if __name__ == "__main__":

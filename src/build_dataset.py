@@ -29,11 +29,10 @@ Usage:
 """
 
 import argparse
-import logging
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 try:
     import duckdb
@@ -49,23 +48,17 @@ except ImportError as e:
 from config_utils import load_config, get_model_config
 from schemas.input_schemas import validate_dataframe, get_schema_info, SCHEMA_MAP
 from data_quality import run_comprehensive_quality_checks
+from logging_utils import (
+    configure_logging_from_config, log_execution_time, log_memory_usage,
+    log_structured_metrics, log_file_operation, get_pipeline_state_tracker,
+    check_operation_idempotency, backup_existing_file
+)
 
 
-def setup_logging() -> None:
-    """
-    Logging Setup für bessere Nachvollziehbarkeit.
-    
-    Als Lernprojekt verwende ich hier verbose logging um jeden Schritt
-    zu dokumentieren. In Production würde man das reduzieren.
-    """
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
 
 
-def validate_input_files() -> None:
+
+def validate_input_files(logger) -> None:
     """
     Validierung der Input CSV-Dateien.
     
@@ -74,12 +67,12 @@ def validate_input_files() -> None:
     Fehlermeldungen später im Prozess.
     """
     required_files = [
-        'data/orders.csv',
-        'data/order_products__prior.csv', 
-        'data/order_products__train.csv',
-        'data/products.csv',
-        'data/aisles.csv',
-        'data/departments.csv'
+        'data/raw/orders.csv',
+        'data/raw/order_products__prior.csv', 
+        'data/raw/order_products__train.csv',
+        'data/raw/products.csv',
+        'data/raw/aisles.csv',
+        'data/raw/departments.csv'
     ]
     
     missing_files = []
@@ -88,16 +81,28 @@ def validate_input_files() -> None:
             missing_files.append(file_path)
     
     if missing_files:
-        logging.error("Fehlende CSV-Dateien gefunden:")
+        logger.error("Fehlende CSV-Dateien gefunden:")
         for file_path in missing_files:
-            logging.error(f"  - {file_path}")
-        logging.error("Bitte stelle sicher, dass alle Instacart CSV-Dateien im data/ Verzeichnis liegen.")
+            logger.error(f"  - {file_path}")
+        logger.error("Bitte stelle sicher, dass alle Instacart CSV-Dateien im data/ Verzeichnis liegen.")
         sys.exit(1)
     
-    logging.info("[OK] Alle benötigten CSV-Dateien gefunden")
+    logger.info("Alle benötigten CSV-Dateien gefunden")
+    
+    # Log file sizes for monitoring
+    file_sizes = {}
+    for file_path in required_files:
+        try:
+            size_mb = Path(file_path).stat().st_size / 1024 / 1024
+            file_sizes[Path(file_path).name] = size_mb
+            logger.debug(f"  {file_path}: {size_mb:.1f} MB")
+        except Exception as e:
+            logger.warning(f"Could not get size for {file_path}: {e}")
+    
+    log_structured_metrics(file_sizes, "input_file_sizes", logger)
 
 
-def validate_csv_schemas() -> None:
+def validate_csv_schemas(logger) -> None:
     """
     Validiert alle CSV-Dateien gegen ihre Pandera-Schemas.
     
@@ -110,48 +115,48 @@ def validate_csv_schemas() -> None:
     
     Bei Schema-Verletzungen wird eine detaillierte Fehlermeldung ausgegeben.
     """
-    logging.info("Starte Schema-Validierung der CSV-Dateien...")
+    logger.info("Starte Schema-Validierung der CSV-Dateien...")
     
     # Mapping von Dateipfaden zu Schema-Namen
     file_schema_mapping = {
-        'data/orders.csv': 'orders',
-        'data/products.csv': 'products', 
-        'data/aisles.csv': 'aisles',
-        'data/departments.csv': 'departments',
-        'data/order_products__prior.csv': 'order_products__prior',
-        'data/order_products__train.csv': 'order_products__train'
+        'data/raw/orders.csv': 'orders',
+        'data/raw/products.csv': 'products', 
+        'data/raw/aisles.csv': 'aisles',
+        'data/raw/departments.csv': 'departments',
+        'data/raw/order_products__prior.csv': 'order_products__prior',
+        'data/raw/order_products__train.csv': 'order_products__train'
     }
     
     validation_errors = []
     
     for file_path, schema_name in file_schema_mapping.items():
         try:
-            logging.info(f"  Validiere {file_path} gegen {schema_name} Schema...")
+            logger.info(f"  Validiere {file_path} gegen {schema_name} Schema...")
             
             # CSV-Datei laden (nur erste 10000 Zeilen für Performance bei großen Dateien)
             try:
                 df = pd.read_csv(file_path, nrows=10000)
-                logging.info(f"    Geladen: {len(df)} Zeilen, {len(df.columns)} Spalten")
+                logger.info(f"    Geladen: {len(df)} Zeilen, {len(df.columns)} Spalten")
             except Exception as e:
-                logging.error(f"    Fehler beim Laden der CSV-Datei: {e}")
+                logger.error(f"    Fehler beim Laden der CSV-Datei: {e}")
                 validation_errors.append(f"{file_path}: Kann nicht geladen werden - {e}")
                 continue
             
             # Schema-Validierung durchführen
             try:
                 validated_df = validate_dataframe(df, schema_name)
-                logging.info(f"    [OK] Schema-Validierung erfolgreich")
+                logger.info(f"    [OK] Schema-Validierung erfolgreich")
                 
                 # Zusätzliche Statistiken für Debugging
                 null_counts = df.isnull().sum()
                 if null_counts.sum() > 0:
-                    logging.info(f"    Null-Werte gefunden:")
+                    logger.info(f"    Null-Werte gefunden:")
                     for col, null_count in null_counts[null_counts > 0].items():
                         null_rate = (null_count / len(df)) * 100
-                        logging.info(f"      {col}: {null_count} ({null_rate:.1f}%)")
+                        logger.info(f"      {col}: {null_count} ({null_rate:.1f}%)")
                 
             except SchemaError as e:
-                logging.error(f"    [FEHLER] Schema-Validierung fehlgeschlagen:")
+                logger.error(f"    [FEHLER] Schema-Validierung fehlgeschlagen:")
                 
                 # Detaillierte Fehleranalyse
                 error_details = []
@@ -169,44 +174,44 @@ def validate_csv_schemas() -> None:
                     error_details.append(f"      {str(e)}")
                 
                 for detail in error_details:
-                    logging.error(detail)
+                    logger.error(detail)
                 
                 validation_errors.append(f"{file_path}: Schema-Validierung fehlgeschlagen")
                 
         except Exception as e:
-            logging.error(f"    [FEHLER] Unerwarteter Fehler bei {file_path}: {e}")
+            logger.error(f"    [FEHLER] Unerwarteter Fehler bei {file_path}: {e}")
             validation_errors.append(f"{file_path}: Unerwarteter Fehler - {e}")
     
     # Zusammenfassung der Validierung
     if validation_errors:
-        logging.error("=" * 60)
-        logging.error("SCHEMA-VALIDIERUNG FEHLGESCHLAGEN!")
-        logging.error("=" * 60)
-        logging.error("Folgende Dateien haben Schema-Verletzungen:")
+        logger.error("=" * 60)
+        logger.error("SCHEMA-VALIDIERUNG FEHLGESCHLAGEN!")
+        logger.error("=" * 60)
+        logger.error("Folgende Dateien haben Schema-Verletzungen:")
         for error in validation_errors:
-            logging.error(f"  - {error}")
-        logging.error("")
-        logging.error("Mögliche Lösungen:")
-        logging.error("  1. Prüfe ob die CSV-Dateien das erwartete Format haben")
-        logging.error("  2. Überprüfe die Schema-Definitionen in src/schemas/input_schemas.py")
-        logging.error("  3. Verwende --skip-validation um Schema-Prüfung zu überspringen (nicht empfohlen)")
-        logging.error("")
+            logger.error(f"  - {error}")
+        logger.error("")
+        logger.error("Mögliche Lösungen:")
+        logger.error("  1. Prüfe ob die CSV-Dateien das erwartete Format haben")
+        logger.error("  2. Überprüfe die Schema-Definitionen in src/schemas/input_schemas.py")
+        logger.error("  3. Verwende --skip-validation um Schema-Prüfung zu überspringen (nicht empfohlen)")
+        logger.error("")
         sys.exit(1)
     else:
-        logging.info("[OK] Alle CSV-Dateien haben die Schema-Validierung bestanden")
-        logging.info("")
+        logger.info("[OK] Alle CSV-Dateien haben die Schema-Validierung bestanden")
+        logger.info("")
         
         # Schema-Informationen für Debugging ausgeben
-        logging.info("Schema-Übersicht:")
+        logger.info("Schema-Übersicht:")
         for schema_name in set(file_schema_mapping.values()):
             try:
                 schema_info = get_schema_info(schema_name)
-                logging.info(f"  {schema_name}: {len(schema_info['columns'])} Spalten")
+                logger.info(f"  {schema_name}: {len(schema_info['columns'])} Spalten")
             except Exception:
                 pass
 
 
-def run_data_quality_checks() -> None:
+def run_data_quality_checks(logger) -> None:
     """
     Führt umfassende Datenqualitätsprüfungen durch.
     
@@ -217,17 +222,17 @@ def run_data_quality_checks() -> None:
     - Geschäftsregel-Validierung
     - Generierung von Qualitätsberichten
     """
-    logging.info("Starte umfassende Datenqualitätsprüfungen...")
+    logger.info("Starte umfassende Datenqualitätsprüfungen...")
     
     try:
         # Führe alle Qualitätschecks durch und generiere Bericht
         report_path = run_comprehensive_quality_checks(
-            data_dir="data",
+            data_dir="data/raw",
             output_dir="data/quality_reports"
         )
         
-        logging.info(f"[OK] Datenqualitätsprüfungen abgeschlossen")
-        logging.info(f"  Qualitätsbericht: {report_path}")
+        logger.info(f"Datenqualitätsprüfungen abgeschlossen")
+        logger.info(f"  Qualitätsbericht: {report_path}")
         
         # Lade Bericht-Summary für Logging
         try:
@@ -240,32 +245,32 @@ def run_data_quality_checks() -> None:
             high_severity = summary.get("high_severity_violations", 0)
             overall_status = summary.get("overall_status", "unknown")
             
-            logging.info(f"  Qualitätsstatus: {overall_status.upper()}")
-            logging.info(f"  Verstöße gesamt: {total_violations}")
-            logging.info(f"  Hohe Schwere: {high_severity}")
+            logger.info(f"  Qualitätsstatus: {overall_status.upper()}")
+            logger.info(f"  Verstöße gesamt: {total_violations}")
+            logger.info(f"  Hohe Schwere: {high_severity}")
             
             # Warnung bei kritischen Qualitätsproblemen
             if high_severity > 0:
-                logging.warning("WARNUNG: Kritische Datenqualitätsprobleme gefunden!")
-                logging.warning("Prüfe den Qualitätsbericht vor dem Fortfahren.")
-                logging.warning("Verwende --skip-quality-checks um zu überspringen (nicht empfohlen)")
+                logger.warning("WARNUNG: Kritische Datenqualitätsprobleme gefunden!")
+                logger.warning("Prüfe den Qualitätsbericht vor dem Fortfahren.")
+                logger.warning("Verwende --skip-quality-checks um zu überspringen (nicht empfohlen)")
             
         except Exception as e:
-            logging.warning(f"Kann Bericht-Summary nicht laden: {e}")
+            logger.warning(f"Kann Bericht-Summary nicht laden: {e}")
         
     except Exception as e:
-        logging.error(f"Fehler bei Datenqualitätsprüfungen: {e}")
-        logging.error("Mögliche Ursachen:")
-        logging.error("  - CSV-Dateien können nicht gelesen werden")
-        logging.error("  - Unzureichender Speicher für große Datasets")
-        logging.error("  - Keine Schreibberechtigung für Qualitätsberichte")
-        logging.error("Verwende --skip-quality-checks um zu überspringen")
+        logger.error(f"Fehler bei Datenqualitätsprüfungen: {e}")
+        logger.error("Mögliche Ursachen:")
+        logger.error("  - CSV-Dateien können nicht gelesen werden")
+        logger.error("  - Unzureichender Speicher für große Datasets")
+        logger.error("  - Keine Schreibberechtigung für Qualitätsberichte")
+        logger.error("Verwende --skip-quality-checks um zu überspringen")
         
         # Bei kritischen Fehlern stoppen, außer explizit übersprungen
         raise
 
 
-def load_sql_query(sql_file_path: str) -> str:
+def load_sql_query(sql_file_path: str, logger) -> str:
     """
     SQL-Query aus Datei laden.
     
@@ -286,25 +291,33 @@ def load_sql_query(sql_file_path: str) -> str:
     sql_path = Path(sql_file_path)
     
     if not sql_path.exists():
-        logging.error(f"SQL-Datei nicht gefunden: {sql_file_path}")
-        logging.error("Bitte stelle sicher, dass src/sql/01_build.sql existiert.")
+        logger.error(f"SQL-Datei nicht gefunden: {sql_file_path}")
+        logger.error("Bitte stelle sicher, dass src/sql/01_build.sql existiert.")
         sys.exit(1)
     
     try:
         with open(sql_path, 'r', encoding='utf-8') as f:
             sql_query = f.read()
         
-        logging.info(f"[OK] SQL-Query geladen aus {sql_file_path}")
-        logging.info(f"  Query-Länge: {len(sql_query)} Zeichen")
+        logger.info(f"SQL-Query geladen aus {sql_file_path}")
+        logger.debug(f"  Query-Länge: {len(sql_query)} Zeichen")
+        
+        # Log structured metrics about SQL query
+        sql_metrics = {
+            "file_path": sql_file_path,
+            "query_length_chars": len(sql_query),
+            "query_lines": len(sql_query.splitlines())
+        }
+        log_structured_metrics(sql_metrics, "sql_query_loaded", logger)
         
         return sql_query
         
     except Exception as e:
-        logging.error(f"Fehler beim Laden der SQL-Datei: {e}")
+        logger.error(f"Fehler beim Laden der SQL-Datei: {e}")
         sys.exit(1)
 
 
-def execute_feature_engineering(sql_query: str, output_path: str) -> None:
+def execute_feature_engineering(sql_query: str, output_path: str, logger, config: Dict[str, Any] = None) -> None:
     """
     Feature Engineering mit DuckDB ausführen und Ergebnis als Parquet speichern.
     
@@ -322,15 +335,21 @@ def execute_feature_engineering(sql_query: str, output_path: str) -> None:
     - DuckDB optimiert den Export automatisch
     - Weniger Code, weniger Fehlerquellen
     """
-    logging.info("Starte Feature Engineering mit DuckDB...")
+    logger.info("Starte Feature Engineering mit DuckDB...")
+    
+    # Log file operation for output with configuration
+    file_exists = Path(output_path).exists()
+    if not log_file_operation("create", output_path, logger, overwrite=file_exists, config=config):
+        logger.error("File operation blocked by configuration")
+        return
     
     # Schritt 1: DuckDB Connection aufbauen
     # Ich verwende hier eine In-Memory Database, da wir keine Persistierung brauchen
     try:
         conn = duckdb.connect(':memory:')
-        logging.info("[OK] DuckDB Verbindung hergestellt")
+        logger.info("DuckDB Verbindung hergestellt")
     except Exception as e:
-        logging.error(f"Fehler bei DuckDB Verbindung: {e}")
+        logger.error(f"Fehler bei DuckDB Verbindung: {e}")
         sys.exit(1)
     
     # Schritt 2: SQL Query ausführen und Timing messen
@@ -338,34 +357,34 @@ def execute_feature_engineering(sql_query: str, output_path: str) -> None:
     start_time = time.time()
     
     try:
-        logging.info("Führe SQL Feature Engineering aus...")
-        logging.info("  - Lese CSV-Dateien aus data/ Verzeichnis")
-        logging.info("  - Trenne Prior/Train Daten (Data Leakage Prevention)")
-        logging.info("  - Berechne User-Product Interaction Features")
-        logging.info("  - Berechne Recency Features")
-        logging.info("  - Berechne Product Popularity Features")
-        logging.info("  - Füge Categorical Features hinzu")
-        logging.info("  - Generiere Labels aus Train Data")
+        logger.info("Führe SQL Feature Engineering aus...")
+        logger.info("  - Lese CSV-Dateien aus data/ Verzeichnis")
+        logger.info("  - Trenne Prior/Train Daten (Data Leakage Prevention)")
+        logger.info("  - Berechne User-Product Interaction Features")
+        logger.info("  - Berechne Recency Features")
+        logger.info("  - Berechne Product Popularity Features")
+        logger.info("  - Füge Categorical Features hinzu")
+        logger.info("  - Generiere Labels aus Train Data")
         
         # SQL ausführen - das Ergebnis ist ein DuckDB Relation
         result = conn.execute(sql_query)
         
         execution_time = time.time() - start_time
-        logging.info(f"[OK] SQL Feature Engineering abgeschlossen in {execution_time:.2f} Sekunden")
+        logger.info(f"[OK] SQL Feature Engineering abgeschlossen in {execution_time:.2f} Sekunden")
         
     except Exception as e:
-        logging.error(f"Fehler bei SQL-Ausführung: {e}")
-        logging.error("Mögliche Ursachen:")
-        logging.error("  - CSV-Dateien haben unerwartetes Format")
-        logging.error("  - Speicher nicht ausreichend für große Datasets")
-        logging.error("  - SQL-Syntax-Fehler in 01_build.sql")
+        logger.error(f"Fehler bei SQL-Ausführung: {e}")
+        logger.error("Mögliche Ursachen:")
+        logger.error("  - CSV-Dateien haben unerwartetes Format")
+        logger.error("  - Speicher nicht ausreichend für große Datasets")
+        logger.error("  - SQL-Syntax-Fehler in 01_build.sql")
         sys.exit(1)
     
     # Schritt 3: Ergebnis als Parquet exportieren
     # Da die SQL-Datei CREATE VIEW Statements enthält, führe ich sie erst aus
     # und dann exportiere ich das finale SELECT-Result
     try:
-        logging.info(f"Exportiere Ergebnis nach {output_path}...")
+        logger.info(f"Exportiere Ergebnis nach {output_path}...")
         
         # Erst alle Views erstellen durch Ausführung der kompletten SQL-Datei
         conn.execute(sql_query)
@@ -437,14 +456,14 @@ def execute_feature_engineering(sql_query: str, output_path: str) -> None:
         
         conn.execute(export_query)
         
-        logging.info("[OK] Parquet-Export abgeschlossen")
+        logger.info("[OK] Parquet-Export abgeschlossen")
         
     except Exception as e:
-        logging.error(f"Fehler beim Parquet-Export: {e}")
-        logging.error("Mögliche Ursachen:")
-        logging.error("  - Keine Schreibberechtigung für Output-Verzeichnis")
-        logging.error("  - Nicht genügend Speicherplatz")
-        logging.error("  - Output-Pfad ungültig")
+        logger.error(f"Fehler beim Parquet-Export: {e}")
+        logger.error("Mögliche Ursachen:")
+        logger.error("  - Keine Schreibberechtigung für Output-Verzeichnis")
+        logger.error("  - Nicht genügend Speicherplatz")
+        logger.error("  - Output-Pfad ungültig")
         sys.exit(1)
     
     # Schritt 4: Validierung des Outputs
@@ -456,23 +475,23 @@ def execute_feature_engineering(sql_query: str, output_path: str) -> None:
         # Schema-Info für Debugging
         schema_info = conn.execute(f"DESCRIBE SELECT * FROM '{output_path}'").fetchall()
         
-        logging.info("[OK] Output-Validierung:")
-        logging.info(f"  - Anzahl Zeilen: {row_count:,}")
-        logging.info(f"  - Anzahl Spalten: {len(schema_info)}")
-        logging.info("  - Schema:")
+        logger.info("[OK] Output-Validierung:")
+        logger.info(f"  - Anzahl Zeilen: {row_count:,}")
+        logger.info(f"  - Anzahl Spalten: {len(schema_info)}")
+        logger.info("  - Schema:")
         for col_name, col_type, null_allowed, key, default, extra in schema_info:
-            logging.info(f"    {col_name}: {col_type}")
+            logger.info(f"    {col_name}: {col_type}")
             
         if row_count == 0:
-            logging.warning("WARNUNG: Dataset ist leer! Prüfe SQL-Query und Input-Daten.")
+            logger.warning("WARNUNG: Dataset ist leer! Prüfe SQL-Query und Input-Daten.")
         
     except Exception as e:
-        logging.warning(f"Validierung fehlgeschlagen (Dataset wurde trotzdem erstellt): {e}")
+        logger.warning(f"Validierung fehlgeschlagen (Dataset wurde trotzdem erstellt): {e}")
     
     finally:
         # Verbindung schließen
         conn.close()
-        logging.info("[OK] DuckDB Verbindung geschlossen")
+        logger.info("[OK] DuckDB Verbindung geschlossen")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -590,84 +609,113 @@ def main() -> None:
         print(f"FEHLER beim Laden der Konfiguration: {e}", file=sys.stderr)
         sys.exit(1)
     
-    # Schritt 3: Logging Setup mit Config
-    logging_config = config['logging']
-    logging.basicConfig(
-        level=getattr(logging, logging_config['level']),
-        format=logging_config['format'],
-        datefmt=logging_config.get('date_format', '%Y-%m-%d %H:%M:%S')
-    )
+    # Schritt 3: Logging Setup mit neuer Infrastruktur
+    logger = configure_logging_from_config(config, __name__, "build_dataset")
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.debug("Verbose Logging aktiviert")
+        logger.setLevel("DEBUG")
+        logger.debug("Verbose Logging aktiviert")
     
-    logging.info("=" * 60)
-    logging.info("INSTACART REORDER PREDICTION - DATASET BUILDER")
-    logging.info("=" * 60)
-    logging.info("Als Lernprojekt bewusst ausführlich kommentiert")
-    logging.info("")
+    # Log initial memory usage
+    log_memory_usage("startup", logger)
+    
+    logger.info("=" * 60)
+    logger.info("INSTACART REORDER PREDICTION - DATASET BUILDER")
+    logger.info("=" * 60)
+    logger.info("Als Lernprojekt bewusst ausführlich kommentiert")
     
     # Verwende Config-Werte oder Command-Line Overrides
     data_config = config['data']
     sql_file = args.sql or data_config['sql_file']
     output_file = args.output or data_config['features_file']
     
-    logging.info(f"Konfiguration:")
-    logging.info(f"  SQL-Datei: {sql_file}")
-    logging.info(f"  Output-Datei: {output_file}")
-    logging.info(f"  Raw Data Pfad: {data_config['raw_path']}")
-    if config['sampling']['max_users']:
-        logging.info(f"  Sampling: {config['sampling']['max_users']} Users")
-    logging.info("")
+    # Log configuration
+    config_metrics = {
+        "sql_file": sql_file,
+        "output_file": output_file,
+        "raw_data_path": data_config['raw_path'],
+        "max_users_sampling": config['sampling']['max_users'],
+        "skip_validation": args.skip_validation,
+        "skip_quality_checks": args.skip_quality_checks
+    }
+    log_structured_metrics(config_metrics, "build_dataset_config", logger)
     
-    # Schritt 4: Input-Validierung
-    logging.info("Schritt 1: Input-Validierung")
-    validate_input_files()
-    
-    # Schritt 4.1: Schema-Validierung (optional)
-    if not args.skip_validation:
-        validate_csv_schemas()
-    else:
-        logging.warning("Schema-Validierung übersprungen (--skip-validation)")
-        logging.info("")
-    
-    # Schritt 4.2: Datenqualitätsprüfungen (optional)
-    if not args.skip_quality_checks:
-        run_data_quality_checks()
-        logging.info("")
-    else:
-        logging.warning("Datenqualitätsprüfungen übersprungen (--skip-quality-checks)")
-        logging.info("")
-    
-    # Schritt 5: SQL-Query laden
-    logging.info("Schritt 2: SQL-Query laden")
-    sql_query = load_sql_query(sql_file)
-    logging.info("")
-    
-    # Schritt 6: Feature Engineering ausführen
-    logging.info("Schritt 3: Feature Engineering ausführen")
-    
-    # Output-Verzeichnis erstellen falls es nicht existiert
-    output_path = Path(output_file)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    execute_feature_engineering(sql_query, output_file)
-    logging.info("")
-    
-    # Schritt 7: Success-Message
-    logging.info("=" * 60)
-    logging.info("[SUCCESS] DATASET BUILDING ERFOLGREICH ABGESCHLOSSEN!")
-    logging.info("=" * 60)
-    logging.info(f"Feature-Dataset erstellt: {output_file}")
-    logging.info("")
-    logging.info("Nächste Schritte:")
-    logging.info("  1. python src/train.py --model logreg")
-    logging.info("  2. python src/train.py --model xgb") 
-    logging.info("  3. python src/train.py --model lgbm")
-    logging.info("  4. python src/report.py")
-    logging.info("")
-    logging.info("Viel Erfolg beim ML-Training! 🚀")
+    try:
+        # Schritt 4: Input-Validierung mit Timing
+        with log_execution_time("input_validation", logger):
+            validate_input_files(logger)
+        
+        # Schritt 4.1: Schema-Validierung (optional)
+        if not args.skip_validation:
+            with log_execution_time("schema_validation", logger):
+                validate_csv_schemas(logger)
+        else:
+            logger.warning("Schema-Validierung übersprungen (--skip-validation)")
+        
+        # Schritt 4.2: Datenqualitätsprüfungen (optional)
+        if not args.skip_quality_checks:
+            with log_execution_time("data_quality_checks", logger):
+                run_data_quality_checks(logger)
+        else:
+            logger.warning("Datenqualitätsprüfungen übersprungen (--skip-quality-checks)")
+        
+        # Schritt 5: SQL-Query laden
+        with log_execution_time("sql_query_loading", logger):
+            sql_query = load_sql_query(sql_file, logger)
+        
+        # Schritt 6: Feature Engineering ausführen
+        # Output-Verzeichnis erstellen falls es nicht existiert
+        output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Check idempotency before executing feature engineering
+        input_files = [
+            'data/raw/orders.csv',
+            'data/raw/order_products__prior.csv', 
+            'data/raw/order_products__train.csv',
+            'data/raw/products.csv',
+            'data/raw/aisles.csv',
+            'data/raw/departments.csv',
+            sql_file
+        ]
+        output_files = [output_file]
+        
+        idempotency_result = check_operation_idempotency(
+            "feature_engineering", input_files, output_files, logger, config
+        )
+        
+        if not idempotency_result["needs_execution"]:
+            logger.info(f"Skipping feature engineering: {idempotency_result['reason']}")
+            logger.info(f"Existing output file: {output_file}")
+        else:
+            logger.info(f"Executing feature engineering: {idempotency_result['reason']}")
+            
+            # Create backup if configured and file exists
+            if config.get('pipeline', {}).get('backup_existing_files', False) and Path(output_file).exists():
+                backup_existing_file(output_file, logger)
+            
+            with log_execution_time("feature_engineering", logger):
+                execute_feature_engineering(sql_query, output_file, logger, config)
+        
+        # Log final memory usage
+        log_memory_usage("completion", logger)
+        
+        # Schritt 7: Success-Message
+        logger.info("=" * 60)
+        logger.info("DATASET BUILDING ERFOLGREICH ABGESCHLOSSEN!")
+        logger.info("=" * 60)
+        logger.info(f"Feature-Dataset erstellt: {output_file}")
+        logger.info("Nächste Schritte:")
+        logger.info("  1. python src/train.py --model logreg")
+        logger.info("  2. python src/train.py --model xgb") 
+        logger.info("  3. python src/train.py --model lgbm")
+        logger.info("  4. python src/report.py")
+        logger.info("Viel Erfolg beim ML-Training! 🚀")
+        
+    except Exception as e:
+        logger.error(f"Dataset building failed: {e}")
+        log_memory_usage("error", logger)
+        raise
 
 
 if __name__ == '__main__':
