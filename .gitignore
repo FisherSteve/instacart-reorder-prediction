@@ -49,7 +49,6 @@ wheels/
 Thumbs.db
 
 # Project specific - exclude all generated outputs
-reports/*.html
 reports/*.csv
 reports/*.json
 reports/*.joblib

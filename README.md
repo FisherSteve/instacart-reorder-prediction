@@ -1,33 +1,32 @@
 # Instacart Reorder Prediction Pipeline
 
-## 🏆 Key Results & Performance
+## Key Results & Performance
 
-**Best Model Performance:** XGBoost achieved **ROC-AUC 0.8289** (target: ≥0.83), demonstrating strong predictive capability for customer reorder behavior.
+**Best Model Performance:** XGBoost achieved **ROC-AUC 0.8289**, demonstrating strong predictive capability for customer reorder behavior.
 
 | Rank | Model | ROC-AUC | PR-AUC | F1@0.5 | Order-F1@top-10 | Training Time |
 |------|-------|---------|--------|--------|------------------|---------------|
-| 🥇 | **XGBoost** | **0.8289** | 0.402 | 0.249 | 0.341 | 663.4s |
-| 🥈 | **LightGBM** | **0.8282** | 0.401 | 0.373 | 0.341 | 398.2s |
-| 🥉 | **LogisticRegression** | **0.816** | 0.356 | 0.347 | 0.331 | 127.1s |
+| 1 | **XGBoost** | **0.8289** | 0.402 | 0.249 | 0.341 | 663.4s |
+| 2 | **LightGBM** | **0.8282** | 0.401 | 0.373 | 0.341 | 398.2s |
+| 3 | **LogisticRegression** | **0.816** | 0.356 | 0.347 | 0.331 | 127.1s |
 
 **Key Technical Achievements:**
-- ✅ **End-to-End ML Pipeline**: Complete workflow from raw CSV data to production-ready models
-- ✅ **Rigorous Data Leakage Prevention**: Strict temporal separation between feature engineering and labels
-- ✅ **Business-Relevant Metrics**: Custom Order-F1 metric measuring set-based prediction accuracy per user
-- ✅ **Scalable Architecture**: SQL-based feature engineering processing 6.7M+ training samples
-- ✅ **Reproducible Results**: Three-command pipeline with deterministic outputs
-- ✅ **Production-Ready Infrastructure**: Containerization, CI/CD, and comprehensive monitoring
-- ✅ **Data Quality Assurance**: Schema validation and automated quality checks
-- ✅ **Structured Logging**: Complete observability and debugging capabilities
+- **End-to-End ML Pipeline**: Complete workflow from raw CSV data to production-ready models
+- **Rigorous Data Leakage Prevention**: Strict temporal separation between feature engineering and labels
+- **Business-Relevant Metrics**: Custom Order-F1 metric measuring set-based prediction accuracy per user
+- **Scalable Architecture**: SQL-based feature engineering processing 6.7M+ training samples
+- **Reproducible Results**: Three-command pipeline with deterministic outputs
+- **Data Quality Assurance**: Schema validation and automated quality checks
+- **Structured Logging**: Complete observability and debugging capabilities
 
 **Dataset Scale:** 6.7M+ training samples, 12 ML features (from 15 engineered columns), 1.7M validation samples
 
-### 📊 Interactive Performance Dashboard
+### Interactive Performance Dashboard
 
 The complete performance analysis is available in the generated HTML report at `reports/report.html`. Key highlights from the latest run:
 
 **Model Comparison Summary:**
-- **Best ROC-AUC**: 0.8289 (XGBoost) - exceeds target of 0.83
+- **Best ROC-AUC**: 0.8289 (XGBoost) 
 - **Training Efficiency**: LightGBM offers best speed/performance trade-off (398.2s)
 - **Feature Engineering**: 12 ML features from 15 engineered columns (6 raw data sources)
 - **Evaluation Rigor**: Set-based Order-F1 metric reflects real business value
@@ -517,7 +516,7 @@ As a "studentisches Lernprojekt," this implementation prioritizes:
 
 ## Security and Data Handling
 
-### 🔒 Data Security Guidelines
+### Data Security Guidelines
 
 **Critical Security Measures:**
 - **Original Instacart CSV files are NEVER committed to version control**
@@ -525,7 +524,7 @@ As a "studentisches Lernprojekt," this implementation prioritizes:
 - Comprehensive `.gitignore` rules prevent accidental data commits
 - Clear data retention and cleanup policies
 
-### 📋 Data Handling Policies
+### Data Handling Policies
 
 **Local Data Management:**
 1. **Data Acquisition**: Download original Instacart dataset files to `data/raw/` directory
@@ -550,7 +549,7 @@ data/raw/
 - Directory structure preserved with `.gitkeep` files
 - Clear documentation of data handling requirements
 
-### 🏢 For Recruiters and Stakeholders
+### For Recruiters and Stakeholders
 
 **Quick Performance Overview:**
 - **Target Achievement**: ROC-AUC 0.8289 exceeds target of ≥0.83
@@ -566,7 +565,7 @@ data/raw/
 
 ## Advanced Features (Tasks 7-11)
 
-### 🔧 Orchestration and Configuration (Task 7)
+### Orchestration and Configuration (Task 7)
 
 **Centralized Configuration Management:**
 - `config.yaml` for all pipeline parameters and settings
@@ -582,7 +581,7 @@ make validate       # End-to-end pipeline validation
 make clean          # Clean intermediate and output files
 ```
 
-### ✅ Data Quality and Schema Validation (Task 8)
+### Data Quality and Schema Validation (Task 8)
 
 **Automated Data Quality Assurance:**
 - **Pandera Schema Validation**: Strict type checking and constraint validation
@@ -600,7 +599,7 @@ orders_schema = DataFrameSchema({
 })
 ```
 
-### 📊 Structured Logging and Observability (Task 9)
+### Structured Logging and Observability (Task 9)
 
 **Comprehensive Logging Infrastructure:**
 - **Execution Time Tracking**: Context managers for performance monitoring
@@ -614,7 +613,7 @@ orders_schema = DataFrameSchema({
 - Model training progress and performance logging
 - Configuration and parameter logging for reproducibility
 
-### 🗂️ Data Layer Organization and Lineage (Task 10)
+### Data Layer Organization and Lineage (Task 10)
 
 **Layered Data Architecture:**
 ```
@@ -631,7 +630,7 @@ data/
 - Clear schema documentation for each data layer
 - Processing step explanations and business context
 
-### 🚀 Deployment Readiness and Security (Task 11)
+### Deployment Readiness and Security (Task 11)
 
 **Production Infrastructure:**
 - **Containerization**: Multi-stage Docker builds for efficient deployment
