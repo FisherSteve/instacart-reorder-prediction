@@ -48,11 +48,19 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project specific - exclude all generated outputs
 reports/*.html
 reports/*.csv
 reports/*.json
+reports/*.joblib
+reports/logs/
 *.parquet
+
+# Machine learning models and artifacts
+*.joblib
+*.pkl
+*.pickle
+*.model
 
 # Data - exclude contents but keep directory structure
 data/raw/*.csv
