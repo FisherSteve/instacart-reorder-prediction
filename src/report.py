@@ -21,6 +21,10 @@ import pandas as pd
 from pathlib import Path
 from typing import List, Dict, Any
 import warnings
+import argparse
+
+# Import configuration utilities
+from config_utils import load_config
 
 # Für bessere Lesbarkeit der Pandas-Ausgabe
 pd.set_option('display.max_columns', None)
@@ -477,19 +481,89 @@ def generate_model_table_html(leaderboard_df: pd.DataFrame) -> str:
     return table_html
 
 
+def parse_arguments() -> argparse.Namespace:
+    """
+    Command-Line Argumente parsen mit Config-Support.
+    """
+    parser = argparse.ArgumentParser(
+        description='Instacart Reorder Prediction - Automated Reporting',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog='''
+Beispiele:
+  python src/report.py
+  python src/report.py --config custom_config.yaml
+  python src/report.py --override output.reports_dir=custom_reports
+        '''
+    )
+    
+    parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help='Pfad zur Config-Datei (default: sucht config.yaml)'
+    )
+    
+    parser.add_argument(
+        '--override',
+        action='append',
+        help='Config-Override im Format key=value (z.B. output.reports_dir=custom_reports)'
+    )
+    
+    return parser.parse_args()
+
+
 def main():
     """
-    Hauptfunktion für Metrics-Sammlung und Report-Generierung.
+    Hauptfunktion für Metrics-Sammlung und Report-Generierung mit Config-Support.
     
     Als Lernprojekt: Ich strukturiere die main() Funktion klar in
     logische Schritte für bessere Nachvollziehbarkeit.
     """
+    # Schritt 0: Argumente parsen und Konfiguration laden
+    args = parse_arguments()
+    
+    try:
+        # Parse overrides from command line
+        overrides = {}
+        if args.override:
+            for override in args.override:
+                if '=' not in override:
+                    print(f"Ungültiges Override-Format: {override}. Verwende key=value")
+                    return
+                key, value = override.split('=', 1)
+                # Try to convert to appropriate type
+                try:
+                    if value.lower() in ('true', 'false'):
+                        value = value.lower() == 'true'
+                    elif value.lower() == 'null':
+                        value = None
+                    elif value.isdigit():
+                        value = int(value)
+                    elif '.' in value and value.replace('.', '').isdigit():
+                        value = float(value)
+                except:
+                    pass  # Keep as string
+                overrides[key] = value
+        
+        config = load_config(args.config, overrides)
+        
+    except Exception as e:
+        print(f"FEHLER beim Laden der Konfiguration: {e}")
+        return
+    
+    # Verwende Config-Werte
+    output_config = config['output']
+    reports_dir = output_config['reports_dir']
+    leaderboard_file = os.path.join(reports_dir, output_config['leaderboard_file'])
+    html_report_file = os.path.join(reports_dir, output_config['html_report_file'])
+    
     print("=== Instacart Reorder Prediction - Automated Reporting ===")
+    print(f"Reports Verzeichnis: {reports_dir}")
     print()
     
     # Schritt 1: Alle Metrics sammeln
     print("1. Sammle alle Modell-Metriken...")
-    all_metrics = collect_all_metrics()
+    all_metrics = collect_all_metrics(reports_dir)
     
     if not all_metrics:
         print("Keine Metrics gefunden. Beende Programm.")
@@ -501,17 +575,17 @@ def main():
     
     # Schritt 3: CSV speichern
     print("\n3. Speichere Leaderboard als CSV...")
-    save_leaderboard_csv(leaderboard_df)
+    save_leaderboard_csv(leaderboard_df, leaderboard_file)
     
     # Schritt 4: HTML-Report generieren
     print("\n4. Generiere HTML Performance Report...")
-    generate_html_report(leaderboard_df)
+    generate_html_report(leaderboard_df, html_report_file)
     
     print("\n=== Automated Reporting abgeschlossen ===")
     print("Outputs:")
-    print("  - reports/metrics_leaderboard.csv")
-    print("  - reports/report.html")
-    print("\nÖffne report.html im Browser für den vollständigen Report!")
+    print(f"  - {leaderboard_file}")
+    print(f"  - {html_report_file}")
+    print(f"\nÖffne {html_report_file} im Browser für den vollständigen Report!")
 
 
 if __name__ == "__main__":

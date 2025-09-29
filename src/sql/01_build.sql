@@ -9,8 +9,8 @@
 -- ============================================================================
 
 -- 1) QUELLEN EINLESEN
--- Ich lese hier alle CSV-Dateien direkt mit DuckDB ein, ohne ETL-Zwischenschritte
--- Das ist effizienter und reduziert die Komplexität der Pipeline
+--  lese  alle CSV-Dateien direkt mit DuckDB ein, ohne ETL-Zwischenschritte
+-- ist effizienter und reduziert die Komplexität der Pipeline
 
 -- Bestellungen (orders.csv)
 -- Enthält: order_id, user_id, eval_set, order_number, order_dow, order_hour_of_day, days_since_prior_order
@@ -47,12 +47,12 @@ SELECT * FROM read_csv_auto('data/departments.csv');
 -- ============================================================================
 -- 2) PRIOR/TRAIN TRENNUNG
 -- ============================================================================
--- Hier trenne ich strikt zwischen den Datensätzen um Data Leakage zu vermeiden
+--  trenne strikt zwischen den Datensätzen um Data Leakage zu vermeiden
 -- Prior: Für Feature-Engineering verwenden
 -- Train: Nur für Label-Generierung verwenden
 
 -- Prior Orders: Alle Bestellungen aus dem 'prior' eval_set
--- Diese verwenden wir für die Feature-Berechnung
+-- verwenden für die Feature-Berechnung
 CREATE OR REPLACE VIEW prior_orders AS
 SELECT 
     order_id,
@@ -65,7 +65,7 @@ FROM orders_raw
 WHERE eval_set = 'prior';
 
 -- Train Orders: Alle Bestellungen aus dem 'train' eval_set  
--- Diese verwenden wir NUR für die Label-Generierung
+--  verwenden wir NUR für die Label-Generierung
 CREATE OR REPLACE VIEW train_orders AS
 SELECT 
     order_id,
@@ -80,11 +80,11 @@ WHERE eval_set = 'train';
 -- ============================================================================
 -- 3) USER-PRODUCT INTERAKTIONS-FEATURES AUS PRIOR DATA
 -- ============================================================================
--- Hier berechne ich für jede User-Product Kombination verschiedene Features
+-- berechne für jede User-Product Kombination verschiedene Features
 -- basierend auf dem historischen Kaufverhalten (nur aus prior orders)
 
 -- Basis: Alle User-Product Kombinationen aus Prior Orders
--- Ich jointe hier die prior orders mit den entsprechenden Produkten
+--  joine die prior orders mit den entsprechenden Produkten
 CREATE OR REPLACE VIEW user_product_prior_base AS
 SELECT 
     po.user_id,
@@ -98,7 +98,7 @@ FROM prior_orders po
 JOIN order_products_prior_raw opp ON po.order_id = opp.order_id;
 
 -- User-Product Aggregations: Historisches Kaufverhalten pro User-Product Paar
--- Hier berechne ich die wichtigsten Features für die Reorder-Prediction
+--  berechne i die wichtigsten Features für die Reorder-Prediction
 CREATE OR REPLACE VIEW user_product_features AS
 SELECT 
     user_id,
@@ -141,7 +141,7 @@ GROUP BY user_id, product_id;
 -- Produkte die kürzlich gekauft wurden, werden eher wieder bestellt
 
 -- User-Level: Maximale Bestellnummer pro User (= letzte Prior-Bestellung)
--- Das brauche ich um zu berechnen wie lange ein Produkt nicht mehr gekauft wurde
+--  berechnen wie lange ein Produkt nicht mehr gekauft wurde
 CREATE OR REPLACE VIEW user_max_prior_order AS
 SELECT 
     user_id,
@@ -173,7 +173,7 @@ JOIN user_max_prior_order umpo ON upf.user_id = umpo.user_id;
 -- 5) PRODUCT POPULARITY FEATURES
 -- ============================================================================
 -- Manche Produkte sind generell beliebter als andere
--- Das ist ein wichtiger Indikator für Reorder-Wahrscheinlichkeit
+-- wichtiger Indikator für Reorder-Wahrscheinlichkeit
 
 -- Global Product Statistics: Wie beliebt ist jedes Produkt insgesamt?
 CREATE OR REPLACE VIEW product_popularity AS
@@ -201,7 +201,7 @@ GROUP BY product_id;
 -- Produktkategorien sind wichtig: Manche Aisles/Departments haben höhere Reorder-Raten
 
 -- Product Enrichment: Füge Aisle und Department Informationen hinzu
--- Das sind kategorische Features die das ML-Modell nutzen kann
+-- kategorische Features die das ML-Modell nutzen kann
 CREATE OR REPLACE VIEW product_categories AS
 SELECT 
     p.product_id,
@@ -216,7 +216,7 @@ LEFT JOIN departments_raw d ON p.department_id = d.department_id;
 -- ============================================================================
 -- 7) LABEL GENERATION (NUR AUS TRAIN DATA!)
 -- ============================================================================
--- Hier generiere ich die Labels (y) aus den Train Orders
+--  generiere die Labels (y) aus den Train Orders
 -- WICHTIG: Das ist der einzige Ort wo ich Train Data verwende!
 
 -- Train Labels: Welche User-Product Paare wurden in Train Orders reordered?
@@ -231,7 +231,7 @@ JOIN order_products_train_raw opt ON tr.order_id = opt.order_id;
 -- ============================================================================
 -- 8) FINAL FEATURE SET ASSEMBLY
 -- ============================================================================
--- Hier füge ich alle Features zusammen und erstelle das finale Dataset
+--  füge  alle Features zusammen und erstelle das finale Dataset
 -- Jede Zeile = ein User-Product Paar mit Features und Label
 
 -- Basis: Alle User-Product Kombinationen die in Prior Orders vorkommen
@@ -245,7 +245,7 @@ FROM user_product_prior_base;
 -- ============================================================================
 -- 8) FINAL FEATURE SET ASSEMBLY
 -- ============================================================================
--- Hier füge ich alle Features zusammen und erstelle das finale Dataset
+-- füge alle Features zusammen und erstelle das finale Dataset
 -- Jede Zeile = ein User-Product Paar mit Features und Label
 
 -- Final Feature Assembly: Alle Features + Labels zusammenfügen
@@ -273,7 +273,7 @@ SELECT
     pp.prod_avg_reorder_rate,
     
     -- Categorical Features (Aisle & Department)
-    -- Diese werden später im Python Code mit OneHotEncoder verarbeitet
+    -- werden später im Python Code mit OneHotEncoder verarbeitet
     pc.aisle_id,
     pc.department_id
 

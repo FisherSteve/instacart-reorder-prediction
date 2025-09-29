@@ -1,0 +1,94 @@
+# Instacart Reorder Prediction - Centralized Configuration
+# Als Lernprojekt bewusst ausführlich kommentiert und strukturiert
+
+# Data paths and organization
+data:
+  raw_path: "data/raw"
+  intermediate_path: "data/intermediate" 
+  features_path: "data/features"
+  features_file: "data/features.parquet"
+  sql_file: "src/sql/01_build.sql"
+
+# Sampling configuration for development and testing
+sampling:
+  max_users: null  # null = no sampling, integer = limit to N users
+  random_seed: 42
+  test_size: 0.2   # Train/validation split ratio
+
+# Model configurations and hyperparameters
+models:
+  default_topk: 10  # Default top-k for Order-F1 calculation
+  
+  # Logistic Regression parameters
+  logreg:
+    max_iter: 1000
+    solver: "lbfgs"
+    class_weight: "balanced"
+    random_state: 42
+  
+  # XGBoost parameters (optimized for Instacart data)
+  xgboost:
+    n_estimators: 2000
+    learning_rate: 0.05
+    max_depth: 6
+    tree_method: "hist"
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    eval_metric: "logloss"
+    use_label_encoder: false
+    verbosity: 0
+    random_state: 42
+  
+  # LightGBM parameters (optimized for memory efficiency)
+  lightgbm:
+    n_estimators: 4000
+    learning_rate: 0.03
+    num_leaves: 127
+    max_depth: 8
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    class_weight: "balanced"
+    metric: "binary_logloss"
+    verbose: -1
+    force_col_wise: true
+    random_state: 42
+
+# Preprocessing configuration
+preprocessing:
+  numeric_imputation_strategy: "median"
+  categorical_imputation_strategy: "constant"
+  categorical_imputation_fill_value: -1
+  onehot_drop_first: true
+  onehot_handle_unknown: "ignore"
+
+# Output and reporting configuration
+output:
+  reports_dir: "reports"
+  model_prefix: "model_"
+  metrics_prefix: "metrics_"
+  leaderboard_file: "metrics_leaderboard.csv"
+  html_report_file: "report.html"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# System resource monitoring
+system:
+  min_memory_gb: 2.0
+  memory_warning_threshold: 1000  # MB
+  enable_memory_monitoring: true
+
+# Data quality validation
+validation:
+  min_samples_per_class: 100
+  max_missing_rate: 0.5  # Maximum allowed missing rate per column
+  enable_schema_validation: true
+  enable_data_quality_checks: true

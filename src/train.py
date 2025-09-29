@@ -32,6 +32,9 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
+# Import configuration utilities
+from config_utils import load_config, get_model_config
+
 # Optional imports für XGBoost und LightGBM
 try:
     import xgboost as xgb
@@ -205,7 +208,7 @@ def validate_arguments(args: argparse.Namespace) -> None:
 
 def parse_arguments() -> argparse.Namespace:
     """
-    Kommandozeilen-Argumente parsen mit verbesserter Validierung.
+    Kommandozeilen-Argumente parsen mit Config-Support.
     
     Ich mache hier bewusst ausführliche Hilfe-Texte und Validierung,
     damit auch Anfänger verstehen, was jeder Parameter bewirkt.
@@ -215,9 +218,10 @@ def parse_arguments() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         epilog="""
 Beispiele:
-  python src/train.py --model logreg --seed 42
-  python src/train.py --model xgb --out xgb_optimized --topk 15
-  python src/train.py --model lgbm --out lgbm_final --topk 10 --seed 123
+  python src/train.py --model logreg
+  python src/train.py --model xgb --out xgb_optimized
+  python src/train.py --model lgbm --config custom_config.yaml
+  python src/train.py --model xgb --override models.xgboost.n_estimators=1000
         """
     )
     
@@ -230,6 +234,13 @@ Beispiele:
     )
     
     parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Pfad zur Config-Datei (default: sucht config.yaml)"
+    )
+    
+    parser.add_argument(
         "--out", 
         type=str, 
         default=None,
@@ -239,21 +250,24 @@ Beispiele:
     parser.add_argument(
         "--topk", 
         type=int, 
-        default=10,
-        help="Top-K Produkte pro User für Order-F1 Berechnung (empfohlen: 5-20)"
+        default=None,
+        help="Top-K Produkte pro User für Order-F1 Berechnung (default: aus config.yaml)"
     )
     
     parser.add_argument(
         "--seed", 
         type=int, 
-        default=42,
-        help="Random Seed für reproduzierbare Ergebnisse (>= 0)"
+        default=None,
+        help="Random Seed für reproduzierbare Ergebnisse (default: aus config.yaml)"
+    )
+    
+    parser.add_argument(
+        "--override",
+        action='append',
+        help='Config-Override im Format key=value (z.B. models.xgboost.n_estimators=1000)'
     )
     
     args = parser.parse_args()
-    
-    # Argument-Validierung
-    validate_arguments(args)
     
     # Wenn kein --out angegeben, verwende den Modellnamen
     if args.out is None:
@@ -404,7 +418,7 @@ def detect_column_types(df: pd.DataFrame) -> Tuple[list, list]:
     return numeric_columns, categorical_columns
 
 
-def create_preprocessing_pipeline(numeric_columns: list, categorical_columns: list) -> ColumnTransformer:
+def create_preprocessing_pipeline(numeric_columns: list, categorical_columns: list, preprocessing_config: Dict[str, Any]) -> ColumnTransformer:
     """
     Erstelle Preprocessing-Pipeline mit Imputation, StandardScaler und OneHotEncoder.
     
@@ -417,7 +431,7 @@ def create_preprocessing_pipeline(numeric_columns: list, categorical_columns: li
     # Numerische Features: Imputation + StandardScaler
     if numeric_columns:
         numeric_transformer = Pipeline([
-            ('imputer', SimpleImputer(strategy='median')),  # Median ist robust gegen Outliers
+            ('imputer', SimpleImputer(strategy=preprocessing_config['numeric_imputation_strategy'])),
             ('scaler', StandardScaler())
         ])
         transformers.append(('numeric', numeric_transformer, numeric_columns))
@@ -426,11 +440,14 @@ def create_preprocessing_pipeline(numeric_columns: list, categorical_columns: li
     # Kategorische Features: Imputation + OneHotEncoder
     if categorical_columns:
         categorical_transformer = Pipeline([
-            ('imputer', SimpleImputer(strategy='constant', fill_value=-1)),  # -1 für 'missing' bei numerischen kategorischen Spalten
+            ('imputer', SimpleImputer(
+                strategy=preprocessing_config['categorical_imputation_strategy'], 
+                fill_value=preprocessing_config['categorical_imputation_fill_value']
+            )),
             ('encoder', OneHotEncoder(
-                drop='first',  # Vermeide Multikollinearität
-                sparse_output=False,  # Dense Arrays für sklearn
-                handle_unknown='ignore'  # Ignoriere unbekannte Kategorien
+                drop='first' if preprocessing_config['onehot_drop_first'] else None,
+                sparse_output=False,
+                handle_unknown=preprocessing_config['onehot_handle_unknown']
             ))
         ])
         transformers.append(('categorical', categorical_transformer, categorical_columns))
@@ -527,7 +544,7 @@ def validate_model_parameters(model_type: str) -> None:
         )
 
 
-def build_model(model_type: str, random_state: int = 42):
+def build_model(model_type: str, model_config: Dict[str, Any]):
     """
     Erstelle optimierte Modelle mit spezifischen Hyperparametern.
     
@@ -544,66 +561,24 @@ def build_model(model_type: str, random_state: int = 42):
     
     if model_type == "logreg":
         # LogisticRegression: Schneller Baseline-Klassifikator
-        model = LogisticRegression(
-            random_state=random_state,
-            max_iter=1000,  # Mehr Iterationen für Konvergenz
-            solver='lbfgs',  # Guter Solver für kleinere Datasets
-            class_weight='balanced'  # Ausgleich für unbalancierte Klassen
-        )
-        print("LogisticRegression mit balanced class weights")
+        model = LogisticRegression(**model_config)
+        print(f"LogisticRegression mit Parametern aus Config: {model_config}")
         
     elif model_type == "xgb":
-        # XGBoost: Optimierte Parameter für Instacart Reorder Prediction
-        # tree_method="hist" für bessere Performance bei großen Datasets
-        # n_estimators=2000 für ausreichende Modellkomplexität
-        # learning_rate=0.05 für stabile Konvergenz
-        model = xgb.XGBClassifier(
-            random_state=random_state,
-            tree_method="hist",      # Spezifiziert: Histogram-basierte Splits für Performance
-            n_estimators=2000,       # Spezifiziert: Mehr Bäume für bessere Accuracy
-            learning_rate=0.05,      # Spezifiziert: Moderate Lernrate für Stabilität
-            max_depth=6,             # Regularisierung: Verhindert Overfitting
-            subsample=0.8,           # Regularisierung: Row sampling
-            colsample_bytree=0.8,    # Regularisierung: Feature sampling
-            reg_alpha=0.1,           # L1 Regularisierung
-            reg_lambda=1.0,          # L2 Regularisierung
-            eval_metric='logloss',   # Evaluation Metrik für binäre Klassifikation
-            use_label_encoder=False, # Vermeidet Deprecation Warning
-            verbosity=0              # Weniger Output für saubere Logs
-        )
-        print("XGBoost mit optimierten Parametern:")
-        print(f"  - tree_method='hist' für Performance")
-        print(f"  - n_estimators=2000 für Modellkomplexität")
-        print(f"  - learning_rate=0.05 für stabile Konvergenz")
-        print(f"  - Regularisierung: alpha=0.1, lambda=1.0")
+        # XGBoost: Parameter aus Konfiguration
+        model = xgb.XGBClassifier(**model_config)
+        print(f"XGBoost mit Parametern aus Config:")
+        for key, value in model_config.items():
+            print(f"  - {key}={value}")
+        print(f"  - Optimiert für Instacart Reorder Prediction")
         
     elif model_type == "lgbm":
-        # LightGBM: Optimierte Parameter für Memory-Effizienz und Performance
-        # n_estimators=4000 da LightGBM schneller ist als XGBoost
-        # learning_rate=0.03 niedriger für mehr Bäume
-        # num_leaves=127 für komplexere Baumstrukturen
-        model = lgb.LGBMClassifier(
-            random_state=random_state,
-            n_estimators=4000,       # Spezifiziert: Mehr Bäume (LightGBM ist schneller)
-            learning_rate=0.03,      # Spezifiziert: Niedrigere Lernrate für mehr Bäume
-            num_leaves=127,          # Spezifiziert: Komplexere Baumstrukturen
-            max_depth=8,             # Etwas tiefer als XGBoost
-            feature_fraction=0.8,    # Feature sampling für Regularisierung
-            bagging_fraction=0.8,    # Row sampling für Regularisierung
-            bagging_freq=5,          # Bagging Frequenz
-            reg_alpha=0.1,           # L1 Regularisierung
-            reg_lambda=1.0,          # L2 Regularisierung
-            class_weight='balanced', # Ausgleich für unbalancierte Klassen
-            metric='binary_logloss', # Evaluation Metrik
-            verbose=-1,              # Keine Ausgabe während Training
-            force_col_wise=True      # Bessere Performance für viele Features
-        )
-        print("LightGBM mit optimierten Parametern:")
-        print(f"  - n_estimators=4000 für hohe Modellkomplexität")
-        print(f"  - learning_rate=0.03 für feinere Anpassungen")
-        print(f"  - num_leaves=127 für komplexe Patterns")
-        print(f"  - Regularisierung: alpha=0.1, lambda=1.0")
-        print(f"  - class_weight='balanced' für unbalancierte Daten")
+        # LightGBM: Parameter aus Konfiguration
+        model = lgb.LGBMClassifier(**model_config)
+        print(f"LightGBM mit Parametern aus Config:")
+        for key, value in model_config.items():
+            print(f"  - {key}={value}")
+        print(f"  - Optimiert für Memory-Effizienz und Performance")
         
     else:
         raise ValueError(f"Unbekannter Modelltyp: {model_type}. Verfügbare Optionen: logreg, xgb, lgbm")
@@ -724,11 +699,11 @@ def save_model_and_metrics(model_pipeline: Pipeline, metrics: Dict[str, Any],
     print(f"Metriken gespeichert: {metrics_file}")
 
 
-def train_and_evaluate_model(model_type: str, output_name: str, topk: int, 
+def train_and_evaluate_model(model_type: str, model_config: Dict[str, Any], output_name: str, topk: int, 
                            X_train: pd.DataFrame, X_val: pd.DataFrame,
                            y_train: np.ndarray, y_val: np.ndarray,
                            users_val: np.ndarray, preprocessor: ColumnTransformer,
-                           random_state: int = 42) -> None:
+                           reports_dir: str = "reports") -> None:
     """
     Robuster Training- und Evaluation-Workflow mit umfassender Fehlerbehandlung.
     
@@ -745,7 +720,7 @@ def train_and_evaluate_model(model_type: str, output_name: str, topk: int,
     
     try:
         # Modell erstellen mit Validierung
-        model = build_model(model_type, random_state)
+        model = build_model(model_type, model_config)
         
         # Pipeline: Preprocessing + Modell
         model_pipeline = Pipeline([
@@ -832,7 +807,7 @@ def train_and_evaluate_model(model_type: str, output_name: str, topk: int,
         
         # Speichern mit Fehlerbehandlung
         try:
-            save_model_and_metrics(model_pipeline, metrics, output_name)
+            save_model_and_metrics(model_pipeline, metrics, output_name, reports_dir)
         except Exception as e:
             raise RuntimeError(f"Speichern fehlgeschlagen: {e}") from e
         
@@ -923,23 +898,61 @@ if __name__ == "__main__":
         # Kommandozeilen-Argumente parsen
         args = parse_arguments()
         
+        # Konfiguration laden mit Overrides
+        try:
+            # Parse overrides from command line
+            overrides = {}
+            if args.override:
+                for override in args.override:
+                    if '=' not in override:
+                        print(f"Ungültiges Override-Format: {override}. Verwende key=value")
+                        sys.exit(1)
+                    key, value = override.split('=', 1)
+                    # Try to convert to appropriate type
+                    try:
+                        if value.lower() in ('true', 'false'):
+                            value = value.lower() == 'true'
+                        elif value.lower() == 'null':
+                            value = None
+                        elif value.isdigit():
+                            value = int(value)
+                        elif '.' in value and value.replace('.', '').isdigit():
+                            value = float(value)
+                    except:
+                        pass  # Keep as string
+                    overrides[key] = value
+            
+            config = load_config(args.config, overrides)
+            
+        except Exception as e:
+            print(f"FEHLER beim Laden der Konfiguration: {e}", file=sys.stderr)
+            sys.exit(1)
+        
+        # Verwende Config-Werte oder Command-Line Overrides
+        topk = args.topk or config['models']['default_topk']
+        seed = args.seed or config['sampling']['random_seed']
+        features_file = config['data']['features_file']
+        reports_dir = config['output']['reports_dir']
+        
         print("=" * 60)
         print("INSTACART REORDER PREDICTION - TRAINING PIPELINE")
         print("=" * 60)
         print(f"Modell: {args.model}")
         print(f"Output: {args.out}")
-        print(f"Top-K: {args.topk}")
-        print(f"Seed: {args.seed}")
+        print(f"Top-K: {topk}")
+        print(f"Seed: {seed}")
+        print(f"Features: {features_file}")
+        print(f"Reports: {reports_dir}")
         print("=" * 60)
         
         # Random Seed setzen für Reproduzierbarkeit
-        np.random.seed(args.seed)
+        np.random.seed(seed)
         
         # Pipeline-Schritte mit individueller Fehlerbehandlung
         try:
             # 1. Daten laden und vorbereiten
             print("\n[SCHRITT 1] Daten laden und vorbereiten...")
-            features_df, target_labels, user_groups = load_and_prepare_data()
+            features_df, target_labels, user_groups = load_and_prepare_data(features_file)
             
         except Exception as e:
             print(f"\n[FEHLER] Schritt 1 fehlgeschlagen: {e}", file=sys.stderr)
@@ -964,7 +977,8 @@ if __name__ == "__main__":
         try:
             # 3. Preprocessing-Pipeline erstellen
             print("\n[SCHRITT 3] Preprocessing-Pipeline erstellen...")
-            preprocessor = create_preprocessing_pipeline(numeric_columns, categorical_columns)
+            preprocessing_config = config['preprocessing']
+            preprocessor = create_preprocessing_pipeline(numeric_columns, categorical_columns, preprocessing_config)
             
         except Exception as e:
             print(f"\n[FEHLER] Schritt 3 fehlgeschlagen: {e}", file=sys.stderr)
@@ -976,8 +990,9 @@ if __name__ == "__main__":
         try:
             # 4. Train/Validation Split mit GroupShuffleSplit
             print("\n[SCHRITT 4] Daten aufteilen...")
+            test_size = config['sampling']['test_size']
             X_train, X_val, y_train, y_val, users_train, users_val = split_data_by_users(
-                features_df, target_labels, user_groups, random_state=args.seed
+                features_df, target_labels, user_groups, test_size=test_size, random_state=seed
             )
             
         except Exception as e:
@@ -990,17 +1005,19 @@ if __name__ == "__main__":
         try:
             # 5. Modell trainieren und evaluieren
             print("\n[SCHRITT 5] Modell trainieren und evaluieren...")
+            model_config = get_model_config(config, args.model)
             train_and_evaluate_model(
                 model_type=args.model,
+                model_config=model_config,
                 output_name=args.out,
-                topk=args.topk,
+                topk=topk,
                 X_train=X_train,
                 X_val=X_val,
                 y_train=y_train,
                 y_val=y_val,
                 users_val=users_val,
                 preprocessor=preprocessor,
-                random_state=args.seed
+                reports_dir=reports_dir
             )
             
         except Exception as e:
