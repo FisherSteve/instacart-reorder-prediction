@@ -55,5 +55,7 @@ reports/*.json
 *.parquet
 
 # Data 
-
 data/
+
+# Kiro IDE files
+.kiro/
