@@ -162,13 +162,13 @@
         <h1>🛒 Instacart Reorder Prediction - Performance Report</h1>
         
         <div class="section">
-            <h2>📊 Projekt Übersicht</h2>
+            <h2> Projekt Übersicht</h2>
             <p><strong>Ziel:</strong> Vorhersage welche Produkte ein Kunde in seinem nächsten Einkaufskorb wiederholt bestellen wird.</p>
             <p><strong>Ansatz:</strong> End-to-End ML Pipeline mit SQL-basierter Feature Engineering (DuckDB), Multi-Model Training (LogReg/XGBoost/LightGBM) und automatisierter Berichtserstellung.</p>
             <p><strong>Evaluation:</strong> Fokus auf Set-basierte Metriken (Order-F1) die das Business-Ziel widerspiegeln: die richtigen Produkte pro Nutzer vorherzusagen.</p>
         </div>
 
-        <h2>🏆 Modell Leaderboard</h2>
+        <h2>Modell Leaderboard</h2>
         <p>Sortiert nach ROC-AUC (höher = besser). Ziel: ROC-AUC ≥ 0.83</p>
         
         
@@ -229,10 +229,10 @@
     
         
         <div class="section">
-            <h2>🔄 Data Lineage & Pipeline Flow</h2>
+            <h2>Data Lineage & Pipeline Flow</h2>
             <div class="lineage-diagram">
                 <div class="flow-stage">
-                    <h4>📁 Raw Data Sources</h4>
+                    <h4>Raw Data Sources</h4>
                     <div class="data-sources">
                         <span class="data-file">orders.csv</span>
                         <span class="data-file">order_products__prior.csv</span>
@@ -246,7 +246,7 @@
                 <div class="flow-arrow">⬇️</div>
                 
                 <div class="flow-stage">
-                    <h4>🔧 Feature Engineering</h4>
+                    <h4>Feature Engineering</h4>
                     <div class="process-box">
                         <strong>src/sql/01_build.sql</strong><br>
                         • User-product aggregations<br>
@@ -257,10 +257,10 @@
                     </div>
                 </div>
                 
-                <div class="flow-arrow">⬇️</div>
+                <div class="flow-arrow"></div>
                 
                 <div class="flow-stage">
-                    <h4>📊 ML-Ready Dataset</h4>
+                    <h4>ML-Ready Dataset</h4>
                     <div class="dataset-box">
                         <strong>data/features/features.parquet</strong><br>
                         Schema: user_id, product_id, y, [55+ features]<br>
@@ -271,7 +271,7 @@
                 <div class="flow-arrow">⬇️</div>
                 
                 <div class="flow-stage">
-                    <h4>🤖 Model Training</h4>
+                    <h4>Model Training</h4>
                     <div class="training-box">
                         <strong>src/train.py</strong><br>
                         • GroupShuffleSplit (user-based)<br>
@@ -284,7 +284,7 @@
                 <div class="flow-arrow">⬇️</div>
                 
                 <div class="flow-stage">
-                    <h4>📈 Performance Reports</h4>
+                    <h4>Performance Reports</h4>
                     <div class="output-files">
                         <span class="output-file">model_*.joblib</span>
                         <span class="output-file">metrics_*.json</span>
@@ -295,20 +295,20 @@
             </div>
             
             <div style="margin-top: 15px; text-align: center;">
-                <p><em>📋 Detailed data lineage documentation available in <code>docs/data_lineage.md</code></em></p>
+                <p><em>Detailed data lineage documentation available in <code>docs/data_lineage.md</code></em></p>
                 <p><strong>Key Transformation Principles:</strong></p>
                 <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
                     <li><strong>Temporal Separation:</strong> 'prior' orders → features, 'train' orders → labels only</li>
                     <li><strong>User-Based Splitting:</strong> GroupShuffleSplit prevents user leakage</li>
                     <li><strong>SQL-First Approach:</strong> DuckDB for efficient CSV processing</li>
-                    <li><strong>Comprehensive Features:</strong> 55+ engineered features from 6 raw data sources</li>
+                    <li><strong>Comprehensive Features:</strong> 14 engineered features from 6 raw data sources</li>
                     <li><strong>Quality Assurance:</strong> Schema validation and data quality monitoring</li>
                 </ul>
             </div>
         </div>
 
         <div class="methodology">
-            <h2>🔬 Methodologie</h2>
+            <h2>Methodologie</h2>
             <ul>
                 <li><strong>Data Leakage Prevention:</strong> Strikte Trennung - 'prior' Orders für Features, 'train' Orders nur für Labels</li>
                 <li><strong>User-based Splitting:</strong> GroupShuffleSplit verhindert User-Leakage zwischen Train/Validation</li>
@@ -319,7 +319,7 @@
         </div>
         
         <div class="limitation">
-            <h2>⚠️ Bekannte Limitationen</h2>
+            <h2>Bekannte Limitationen</h2>
             <ul>
                 <li><strong>Cold Start Problem:</strong> Keine Behandlung neuer User oder Produkte ohne Historie</li>
                 <li><strong>Simple Thresholding:</strong> Für erste Version bewusst einfache 0.5 Schwelle statt optimierter Thresholds</li>
@@ -330,7 +330,7 @@
         </div>
         
         <div class="section">
-            <h2>📈 Key Insights</h2>
+            <h2>Key Insights</h2>
             <ul>
                 <li><strong>Beste Performance:</strong> XGB mit ROC-AUC 0.8288</li>
                 <li><strong>Training Effizienz:</strong> LogReg am schnellsten (139.43s), LightGBM guter Kompromiss</li>
@@ -338,11 +338,7 @@
                 <li><strong>Feature Importance:</strong> 54 numerische + 2 kategorische Features</li>
             </ul>
         </div>
-        
-        <div class="footer">
-            <p>Generiert am 29.09.2025 19:38 | Studentisches Lernprojekt mit Fokus auf End-to-End ML Pipeline</p>
-            <p>Reproduktion: python src/build_dataset.py → python src/train.py --model [logreg|xgb|lgbm] → python src/report.py</p>
-        </div>
     </div>
 </body>
 </html>
+
