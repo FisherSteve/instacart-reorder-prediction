@@ -18,7 +18,7 @@ venv/
 
 
 
-# Project specific - exclude all generated outputs
+# Project specific
 reports/*.csv
 reports/*.json
 reports/*.joblib
@@ -31,13 +31,13 @@ reports/logs/
 *.pickle
 *.model
 
-# Data - exclude contents but keep directory structure
+# Data 
 data/raw/*.csv
 data/intermediate/*
 data/features/*.parquet
 data/quality_reports/*
 
-# Instacart dataset files - NEVER commit original data
+# Instacart dataset files
 orders.csv
 order_products__prior.csv
 order_products__train.csv
@@ -55,3 +55,4 @@ departments.csv
 !data/intermediate/.gitkeep  
 !data/features/.gitkeep
 !data/quality_reports/.gitkeep
+
