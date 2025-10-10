@@ -44,14 +44,6 @@ This project implements a complete machine learning pipeline to predict which pr
 
 **Target Performance:** ROC-AUC ≥ 0.83 with Order-F1 improvement over baseline approaches.
 
-## Learning Project Approach
-
-This is a **student learning project**  emphasizing educational clarity over optimization. The implementation style reflects a junior data scientist's learning journey with:
-
-- **Learning-oriented Explanations:** Comments explain WHY decisions are made, not just WHAT the code does
-- **Verbose Clarity:** Prefer `user_last_prior_ord` over `ulpo`, `times_reordered` over `tr`
-- **Step-by-step Logic:** Break complex operations into clearly documented intermediate steps
-- **Beginner-friendly Structure:** Code should be approachable for someone learning ML pipelines
 
 ## Three-Command Reproduction Workflow
 
@@ -324,4 +316,5 @@ instacart-reorder-prediction/
 
 
 *This project demonstrates a complete, production-ready ML pipeline implementation with emphasis on educational clarity, reproducible results, proper evaluation methodology, and enterprise-grade infrastructure.*
+
 
