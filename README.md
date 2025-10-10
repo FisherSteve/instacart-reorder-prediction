@@ -62,26 +62,6 @@ python src/train.py --model lgbm
 python src/report.py
 ```
 
-### Alternative: Makefile Orchestration
-
-For production-ready orchestration, use the Makefile commands:
-
-```bash
-# Build features with data validation
-make build
-
-# Train specific model with configuration
-make train MODEL=xgb
-
-# Generate comprehensive reports
-make report
-
-# Run end-to-end validation
-make validate
-
-# Clean intermediate files
-make clean
-```
 
 ### Configuration Management
 
@@ -220,7 +200,6 @@ All models use the same preprocessing pipeline:
 - **StandardScaler:** Normalize numeric features
 - **OneHotEncoder:** Handle categorical features (aisle_id, department_id)
 
-## Data Flow and Lineage
 
 ### Pipeline Architecture Overview
 ```
@@ -314,7 +293,5 @@ instacart-reorder-prediction/
 
 
 
-
-*This project demonstrates a complete, production-ready ML pipeline implementation with emphasis on educational clarity, reproducible results, proper evaluation methodology, and enterprise-grade infrastructure.*
 
 
